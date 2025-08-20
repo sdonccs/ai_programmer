@@ -1,0 +1,761 @@
+## 任务复杂度分类
+用户发给你的任务一般会附带上以下几种任务复杂度（如果用户没有给出任务复杂度，请自行分析判断出任务复杂度）：
+1. 低：通常只需要一步即可完成，涉及单个文件。
+2. 中：通常需要多步才能完成，涉及多个文件（请灵活判断涉及到的文件）。
+3. 高：通常需要很多步才能完成，涉及整个项目中几乎所有的文件。
+
+## 需求确认（问卷调查模式）
+当用户的需求不够明确时，不要立刻开始随意地进行工作，而是要通过问卷调查的方式向用户确定需求：每次发送给用户一道选择题，用户答完后再给出下一道。直到你认为需求已经完全明确后再停止问卷调查，此时你需要总结需求，等待用户确认后再开始执行需求。
+注意：
+1. 不要固定总题目数量，因为随着对话的进行，极其可能补充题目。
+2. 你必须要向用户询问需求的每个细节，即使要问用户100个问题也是可以的。
+3. 当用户对当前题目现有的选项都不满意时，用户会回复你“其它”二字，这时，你需要适当增加当前题目的选项，并将增加的选项发给用户，等待用户作答，此过程可以重复，直到用户给出具体选项或直接发给你自定义的答案。
+4. 问卷调查期间，如果某个问题可以通过调用工具查明，那么这个问题就不需要向用户询问，而是先暂停问卷调查，进行工具调用，查明答案之后再继续问卷调查。
+
+按照以下的说明优化当前项目的GUI：
+**1. 总体优化目标:**
+   - 对现有基于 PyQt5 的 GUI 进行视觉美化，使其更具现代感和专业性。
+
+**2. 设计方向:**
+   - 整体风格借鉴 **微软的 Fluent Design** 设计体系的核心元素。
+
+**3. 具体实现细节:**
+
+   *   **① 层次感与深度 (Shadows):**
+       *   **应用范围:** 为 **聊天气泡**、底部的 **文本输入区域** 和 **当前激活的标签页** 添加阴影效果。
+       *   **风格:** 采用 **微妙且柔和 (Subtle & Soft)** 的阴影，与深色背景自然融合，营造精致的悬浮感。
+
+   *   **② 字体 (Typography):**
+       *   **字体选型:** 将应用全局字体统一更换为 Fluent Design 的官方推荐字体 **"Segoe UI"**，以获得最佳的 Windows 原生视觉体验。
+
+   *   **③ 色彩方案 (Color Palette):**
+       *   **主色调:** 将当前界面中的主题色（如激活标签、发送按钮、用户气泡等的亮蓝色）替换为一种饱和度较低、融入了灰色调的 **"灰调蓝 (Slate Blue)"**。
+       *   **背景:** 保持现有的暗色主题背景。
+
+   *   **④ 交互反馈 (Interaction Feedback):**
+       *   **效果:** 当鼠标悬停在按钮、标签页等可交互组件上时，应用 **柔和的组合效果**。
+       *   **具体表现:** 组件的 **背景色会轻微变亮**，同时其边缘会出现一条与新主题色（灰调蓝）和谐统一的 **半透明柔和边框**。
+
+暂时：
+import sys
+import json
+from PyQt5.QtWidgets import (
+    QApplication, QMainWindow, QTabWidget, QWidget, QVBoxLayout,
+    QHBoxLayout, QTextEdit, QPushButton, QLabel, QScrollArea,
+    QStatusBar, QFrame, QMessageBox, QGraphicsDropShadowEffect
+)
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer, QPropertyAnimation, QEasingCurve
+from PyQt5.QtGui import QFont, QPalette, QColor, QFontDatabase
+
+from helpers.agent import Agent
+from helpers.model_api_client import openrouter_client, openrouter_model_names
+from helpers.get_prompt import get_prompt
+from helpers.extract import extract_target_from_content_xml_tag
+from tools.file_ops import get_dir_tree, read_file, create_file, edit_file, delete_file_or_dir
+
+
+# 工具名-实际标识符映射字典
+tools_map_dict = {
+    "LS": get_dir_tree,
+    "View": read_file,
+    "Create": create_file,
+    "Edit": edit_file,
+    "Delete": delete_file_or_dir
+}
+
+
+class ChatBubble(QFrame):
+    """聊天气泡组件"""
+
+    def __init__(self, text, is_user=True, is_system=False):
+        super().__init__()
+        self.setFrameStyle(QFrame.NoFrame)
+
+        # 创建布局
+        layout = QVBoxLayout()
+        layout.setContentsMargins(12, 8, 12, 8)
+
+        # 创建文本标签
+        self.text_label = QLabel(text)
+        self.text_label.setWordWrap(True)
+        self.text_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.text_label.setFont(QFont("Segoe UI", 16))
+
+        # 添加阴影效果
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(15)
+        shadow.setXOffset(0)
+        shadow.setYOffset(3)
+        shadow.setColor(QColor(0, 0, 0, 80))
+        self.setGraphicsEffect(shadow)
+
+        # 设置样式
+        if is_system:
+            self.setStyleSheet("""
+                QFrame {
+                    background-color: #3C3C3C;
+                    border-radius: 12px;
+                    margin: 6px 50px;
+                    border: 1px solid rgba(135, 143, 173, 0.3);
+                }
+                QLabel {
+                    color: #E6E6E6;
+                    font-family: 'Segoe UI';
+                    font-size: 16px;
+                    font-style: italic;
+                }
+            """)
+        elif is_user:
+            self.setStyleSheet("""
+                QFrame {
+                    background-color: #5D6B99;
+                    border-radius: 12px;
+                    margin: 6px 50px 6px 100px;
+                    border: 1px solid rgba(93, 107, 153, 0.4);
+                }
+                QLabel {
+                    color: white;
+                    font-family: 'Segoe UI';
+                    font-size: 16px;
+                }
+            """)
+        else:
+            self.setStyleSheet("""
+                QFrame {
+                    background-color: #2F2F2F;
+                    border-radius: 12px;
+                    margin: 6px 100px 6px 50px;
+                    border: 1px solid rgba(93, 107, 153, 0.2);
+                }
+                QLabel {
+                    color: #E6E6E6;
+                    font-family: 'Segoe UI';
+                    font-size: 16px;
+                }
+            """)
+
+        layout.addWidget(self.text_label)
+        self.setLayout(layout)
+
+
+class AIWorkerThread(QThread):
+    """AI处理线程"""
+
+    response_received = pyqtSignal(str)
+    error_occurred = pyqtSignal(str)
+
+    def __init__(self, agent, message):
+        super().__init__()
+        self.agent = agent
+        self.message = message
+
+    def run(self):
+        try:
+            response = self.agent.get_content(self.message)
+            self.response_received.emit(response)
+        except Exception as e:
+            self.error_occurred.emit(str(e))
+
+
+class ToolConfirmWidget(QWidget):
+    """工具调用确认组件"""
+
+    tool_confirmed = pyqtSignal(bool)
+
+    def __init__(self, tool_info):
+        super().__init__()
+        self.init_ui(tool_info)
+
+    def init_ui(self, tool_info):
+        layout = QVBoxLayout()
+
+        # 工具信息显示
+        info_label = QLabel(f"AI请求执行工具调用:\n{tool_info}")
+        info_label.setStyleSheet("""
+            QLabel {
+                background-color: #2A2A2A;
+                color: #E6E6E6;
+                padding: 12px;
+                border-radius: 8px;
+                font-family: 'Segoe UI', 'Consolas', monospace;
+                font-size: 14px;
+                border: 1px solid rgba(93, 107, 153, 0.3);
+            }
+        """)
+        info_label.setWordWrap(True)
+
+        # 添加阴影效果到工具信息框
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(12)
+        shadow.setXOffset(0)
+        shadow.setYOffset(2)
+        shadow.setColor(QColor(0, 0, 0, 60))
+        info_label.setGraphicsEffect(shadow)
+
+        # 按钮布局
+        button_layout = QHBoxLayout()
+
+        allow_btn = QPushButton("允许")
+        allow_btn.setFont(QFont("Segoe UI", 10, QFont.Medium))
+        allow_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #5D8A5D;
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                border-radius: 6px;
+                font-weight: 500;
+                font-family: 'Segoe UI';
+            }
+            QPushButton:hover {
+                background-color: #6B9B6B;
+                border: 1px solid rgba(93, 107, 153, 0.4);
+            }
+            QPushButton:pressed {
+                background-color: #4F7A4F;
+            }
+        """)
+        allow_btn.clicked.connect(lambda: self.tool_confirmed.emit(True))
+
+        reject_btn = QPushButton("拒绝")
+        reject_btn.setFont(QFont("Segoe UI", 10, QFont.Medium))
+        reject_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #A15D5D;
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                border-radius: 6px;
+                font-weight: 500;
+                font-family: 'Segoe UI';
+            }
+            QPushButton:hover {
+                background-color: #B56B6B;
+                border: 1px solid rgba(93, 107, 153, 0.4);
+            }
+            QPushButton:pressed {
+                background-color: #8F4F4F;
+            }
+        """)
+        reject_btn.clicked.connect(lambda: self.tool_confirmed.emit(False))
+
+        button_layout.addWidget(allow_btn)
+        button_layout.addWidget(reject_btn)
+
+        layout.addWidget(info_label)
+        layout.addLayout(button_layout)
+
+        self.setLayout(layout)
+
+
+class ChatTab(QWidget):
+    """聊天标签页"""
+
+    model_switched = pyqtSignal(str)
+
+    def __init__(self, mode_name, parent_window):
+        super().__init__()
+        self.mode_name = mode_name
+        self.parent_window = parent_window
+        self.agent = None
+        self.current_tool_calling = None
+        self.ai_worker = None
+
+        self.init_ui()
+        self.init_agent()
+
+    def init_ui(self):
+        layout = QVBoxLayout()
+
+        # 聊天历史区域
+        self.chat_scroll = QScrollArea()
+        self.chat_scroll.setWidgetResizable(True)
+        self.chat_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        self.chat_widget = QWidget()
+        self.chat_layout = QVBoxLayout()
+        self.chat_layout.addStretch()
+        self.chat_widget.setLayout(self.chat_layout)
+
+        self.chat_scroll.setWidget(self.chat_widget)
+        self.chat_scroll.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                background-color: #1E1E1E;
+            }
+            QScrollBar:vertical {
+                background-color: #2A2A2A;
+                border: none;
+                border-radius: 6px;
+                width: 12px;
+            }
+            QScrollBar::handle:vertical {
+                background-color: rgba(93, 107, 153, 0.6);
+                border-radius: 6px;
+                min-height: 20px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background-color: rgba(93, 107, 153, 0.8);
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                border: none;
+                background: none;
+            }
+        """)
+
+        # 输入区域
+        self.input_layout = QVBoxLayout()
+
+        # 普通输入组件
+        self.normal_input_widget = QWidget()
+        normal_layout = QHBoxLayout()
+
+        self.input_text = QTextEdit()
+        self.input_text.setMaximumHeight(100)
+        self.input_text.setPlaceholderText("输入消息...")
+        self.input_text.setFont(QFont("Segoe UI", 14))
+
+        # 为输入框添加阴影效果
+        input_shadow = QGraphicsDropShadowEffect()
+        input_shadow.setBlurRadius(10)
+        input_shadow.setXOffset(0)
+        input_shadow.setYOffset(2)
+        input_shadow.setColor(QColor(0, 0, 0, 50))
+        self.input_text.setGraphicsEffect(input_shadow)
+
+        self.input_text.setStyleSheet("""
+            QTextEdit {
+                background-color: #2A2A2A;
+                color: #E6E6E6;
+                border: 1px solid rgba(93, 107, 153, 0.3);
+                border-radius: 8px;
+                padding: 12px;
+                font-size: 14px;
+                font-family: 'Segoe UI';
+            }
+            QTextEdit:focus {
+                border: 2px solid rgba(93, 107, 153, 0.6);
+                background-color: #2F2F2F;
+            }
+        """)
+
+        self.send_btn = QPushButton("发送")
+        self.send_btn.setFixedSize(90, 45)
+        self.send_btn.setFont(QFont("Segoe UI", 10, QFont.Medium))
+
+        # 为发送按钮添加阴影效果
+        btn_shadow = QGraphicsDropShadowEffect()
+        btn_shadow.setBlurRadius(8)
+        btn_shadow.setXOffset(0)
+        btn_shadow.setYOffset(2)
+        btn_shadow.setColor(QColor(0, 0, 0, 40))
+        self.send_btn.setGraphicsEffect(btn_shadow)
+
+        self.send_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #5D6B99;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-weight: 500;
+                font-family: 'Segoe UI';
+            }
+            QPushButton:hover {
+                background-color: #6B7AAD;
+                border: 1px solid rgba(93, 107, 153, 0.5);
+            }
+            QPushButton:pressed {
+                background-color: #4F5C85;
+            }
+            QPushButton:disabled {
+                background-color: #404040;
+                color: #888888;
+                border: 1px solid rgba(64, 64, 64, 0.5);
+            }
+        """)
+        self.send_btn.clicked.connect(self.send_message)
+
+        normal_layout.addWidget(self.input_text)
+        normal_layout.addWidget(self.send_btn)
+        self.normal_input_widget.setLayout(normal_layout)
+
+        # 工具确认组件占位
+        self.tool_confirm_widget = None
+
+        self.input_layout.addWidget(self.normal_input_widget)
+
+        layout.addWidget(self.chat_scroll)
+        layout.addLayout(self.input_layout)
+
+        self.setLayout(layout)
+
+    def init_agent(self):
+        """初始化AI代理"""
+        variables = {
+            "root_dir_path": "C:/alocation/projects/ai_programmer",
+            "cwd_path": "C:/alocation/projects/ai_programmer",
+        }
+
+        if self.mode_name == "ask":
+            model_name = openrouter_model_names["google"][0]
+            system_prompt = get_prompt("ask_mode_system", variables)
+        elif self.mode_name == "edit":
+            model_name = openrouter_model_names["anthropic"][0]
+            system_prompt = get_prompt("edit_mode_system", variables)
+        else:  # questionnaire
+            model_name = openrouter_model_names["google"][0]
+            system_prompt = get_prompt("questionnaire_mode_system", variables)
+
+        self.agent = Agent(
+            client=openrouter_client,
+            model_name=model_name,
+            system_prompt=system_prompt
+        )
+
+        # 通知主窗口更新状态栏
+        self.model_switched.emit(model_name)
+
+    def add_message(self, text, is_user=True, is_system=False):
+        """添加消息到聊天历史"""
+        bubble = ChatBubble(text, is_user, is_system)
+
+        # 插入到倒数第二个位置（最后一个是stretch）
+        self.chat_layout.insertWidget(self.chat_layout.count() - 1, bubble)
+
+        # 滚动到底部
+        QTimer.singleShot(100, self.scroll_to_bottom)
+
+    def scroll_to_bottom(self):
+        """滚动到底部"""
+        scrollbar = self.chat_scroll.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
+
+    def send_message(self):
+        """发送消息"""
+        text = self.input_text.toPlainText().strip()
+        if not text:
+            return
+
+        # 检查是否是模型切换命令
+        if text == "/shift":
+            self.switch_model()
+            self.input_text.clear()
+            return
+
+        # 添加用户消息
+        self.add_message(text, is_user=True)
+        self.input_text.clear()
+
+        # 禁用发送按钮并更新样式
+        self.send_btn.setEnabled(False)
+        self.send_btn.setText("处理中...")
+        self.send_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #666666;
+                color: #CCCCCC;
+                border: none;
+                border-radius: 8px;
+                font-weight: 500;
+                font-family: 'Segoe UI';
+                border: 1px solid rgba(93, 107, 153, 0.2);
+            }
+        """)
+
+        # 创建AI处理线程
+        self.ai_worker = AIWorkerThread(self.agent, text)
+        self.ai_worker.response_received.connect(self.handle_ai_response)
+        self.ai_worker.error_occurred.connect(self.handle_ai_error)
+        self.ai_worker.start()
+
+    def handle_ai_response(self, response):
+        """处理AI响应"""
+        # 添加AI回复
+        self.add_message(response, is_user=False)
+
+        # 检查是否有工具调用
+        tool_calling = extract_target_from_content_xml_tag(response, "tool_calling")
+        if tool_calling:
+            self.show_tool_confirmation(tool_calling)
+        else:
+            # 恢复发送按钮
+            self.restore_send_button()
+
+    def handle_ai_error(self, error_msg):
+        """处理AI错误"""
+        self.add_message(f"错误: {error_msg}", is_system=True)
+
+        # 恢复发送按钮
+        self.restore_send_button()
+
+    def show_tool_confirmation(self, tool_calling):
+        """显示工具确认界面"""
+        self.current_tool_calling = tool_calling
+
+        # 隐藏普通输入组件
+        self.normal_input_widget.hide()
+
+        # 创建并显示工具确认组件
+        self.tool_confirm_widget = ToolConfirmWidget(tool_calling)
+        self.tool_confirm_widget.tool_confirmed.connect(self.handle_tool_confirmation)
+        self.input_layout.addWidget(self.tool_confirm_widget)
+
+    def handle_tool_confirmation(self, confirmed):
+        """处理工具确认结果"""
+        if confirmed:
+            try:
+                # 执行工具调用
+                tool_calling_dict = json.loads(self.current_tool_calling)
+                tool = tools_map_dict[tool_calling_dict["tool_name"]]
+                tool_return = tool(**tool_calling_dict["parameters"])
+
+                # 格式化工具返回值
+                tool_return_message = f"""<tool_return>
+{tool_return}
+</tool_return>"""
+
+                # 发送给AI
+                self.ai_worker = AIWorkerThread(self.agent, tool_return_message)
+                self.ai_worker.response_received.connect(self.handle_ai_response)
+                self.ai_worker.error_occurred.connect(self.handle_ai_error)
+                self.ai_worker.start()
+
+            except Exception as e:
+                self.add_message(f"工具执行错误: {str(e)}", is_system=True)
+                self.restore_normal_input()
+        else:
+            self.add_message("用户拒绝了工具调用", is_system=True)
+            self.restore_normal_input()
+
+        # 移除工具确认组件
+        if self.tool_confirm_widget:
+            self.tool_confirm_widget.hide()
+            self.input_layout.removeWidget(self.tool_confirm_widget)
+            self.tool_confirm_widget.deleteLater()
+            self.tool_confirm_widget = None
+
+        # 显示普通输入组件
+        self.normal_input_widget.show()
+
+    def restore_normal_input(self):
+        """恢复普通输入状态"""
+        self.restore_send_button()
+
+    def restore_send_button(self):
+        """恢复发送按钮状态"""
+        self.send_btn.setEnabled(True)
+        self.send_btn.setText("发送")
+
+        # 添加微妙的恢复动画效果
+        self.send_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #5D6B99;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-weight: 500;
+                font-family: 'Segoe UI';
+            }
+            QPushButton:hover {
+                background-color: #6B7AAD;
+                border: 1px solid rgba(93, 107, 153, 0.5);
+            }
+            QPushButton:pressed {
+                background-color: #4F5C85;
+            }
+            QPushButton:disabled {
+                background-color: #404040;
+                color: #888888;
+                border: 1px solid rgba(64, 64, 64, 0.5);
+            }
+        """)
+
+    def switch_model(self):
+        """切换模型"""
+        if self.agent.model_name == openrouter_model_names["google"][0]:
+            new_model = openrouter_model_names["anthropic"][0]
+        else:
+            new_model = openrouter_model_names["google"][0]
+
+        self.agent.model_name = new_model
+        self.add_message(f"已切换模型为: {new_model}", is_system=True)
+        self.model_switched.emit(new_model)
+
+
+class MainWindow(QMainWindow):
+    """主窗口"""
+
+    def __init__(self):
+        super().__init__()
+        self.current_model = openrouter_model_names["google"][0]
+        self.init_ui()
+
+    def init_ui(self):
+        self.setWindowTitle("AI Programmer Assistant")
+        self.setGeometry(100, 100, 1200, 800)
+
+        # 设置应用程序字体
+        app_font = QFont("Segoe UI", 9)
+        self.setFont(app_font)
+
+        # 设置Fluent Design风格的暗色主题
+        self.setStyleSheet("""
+            QMainWindow {
+                background-color: #1E1E1E;
+                color: #E6E6E6;
+                font-family: 'Segoe UI';
+            }
+            QTabWidget::pane {
+                border: 1px solid rgba(93, 107, 153, 0.3);
+                background-color: #1E1E1E;
+                border-radius: 6px;
+            }
+            QTabWidget::tab-bar {
+                alignment: center;
+            }
+            QTabBar::tab {
+                background-color: #2A2A2A;
+                color: #E6E6E6;
+                border: 1px solid rgba(93, 107, 153, 0.2);
+                padding: 15px 30px;
+                margin-right: 3px;
+                border-top-left-radius: 8px;
+                border-top-right-radius: 8px;
+                font-family: 'Segoe UI';
+                font-weight: 500;
+                min-width: 120px;
+                text-align: center;
+            }
+            QTabBar::tab:selected {
+                background-color: #5D6B99;
+                border: 1px solid rgba(93, 107, 153, 0.6);
+                box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.3);
+            }
+            QTabBar::tab:hover:!selected {
+                background-color: #383838;
+                border: 1px solid rgba(93, 107, 153, 0.4);
+            }
+        """)
+
+        # 创建标签页组件
+        self.tab_widget = QTabWidget()
+
+        # 为标签页组件添加阴影效果
+        tab_shadow = QGraphicsDropShadowEffect()
+        tab_shadow.setBlurRadius(15)
+        tab_shadow.setXOffset(0)
+        tab_shadow.setYOffset(3)
+        tab_shadow.setColor(QColor(0, 0, 0, 100))
+        self.tab_widget.setGraphicsEffect(tab_shadow)
+
+        # 创建三个模式的标签页
+        self.ask_tab = ChatTab("ask", self)
+        self.edit_tab = ChatTab("edit", self)
+        self.questionnaire_tab = ChatTab("questionnaire", self)
+
+        self.tab_widget.addTab(self.ask_tab, "Ask")
+        self.tab_widget.addTab(self.edit_tab, "Edit")
+        self.tab_widget.addTab(self.questionnaire_tab, "Questionnaire")
+
+        # 连接模型切换信号
+        self.ask_tab.model_switched.connect(self.update_status_bar)
+        self.edit_tab.model_switched.connect(self.update_status_bar)
+        self.questionnaire_tab.model_switched.connect(self.update_status_bar)
+
+        # 标签页切换时更新状态栏
+        self.tab_widget.currentChanged.connect(self.on_tab_changed)
+
+        self.setCentralWidget(self.tab_widget)
+
+        # 创建状态栏
+        self.status_bar = QStatusBar()
+        self.model_label = QLabel(f"当前模型: {self.current_model}")
+        self.model_label.setFont(QFont("Segoe UI", 9, QFont.Medium))
+        self.model_label.setStyleSheet("""
+            QLabel {
+                color: #5D6B99;
+                font-weight: 500;
+                font-family: 'Segoe UI';
+                padding: 6px 12px;
+                border-radius: 6px;
+                background-color: transparent;
+            }
+            QLabel:hover {
+                background-color: rgba(93, 107, 153, 0.1);
+                border: 1px solid rgba(93, 107, 153, 0.3);
+                cursor: pointer;
+            }
+        """)
+        self.model_label.mousePressEvent = self.switch_current_model
+
+        self.status_bar.addPermanentWidget(self.model_label)
+        self.status_bar.setStyleSheet("""
+            QStatusBar {
+                background-color: #2A2A2A;
+                color: #E6E6E6;
+                border-top: 1px solid rgba(93, 107, 153, 0.3);
+                font-family: 'Segoe UI';
+            }
+        """)
+
+        self.setStatusBar(self.status_bar)
+
+    def update_status_bar(self, model_name):
+        """更新状态栏显示的模型名称"""
+        self.current_model = model_name
+        self.model_label.setText(f"当前模型: {model_name}")
+
+    def on_tab_changed(self, index):
+        """标签页切换时更新当前模型显示"""
+        tabs = [self.ask_tab, self.edit_tab, self.questionnaire_tab]
+        if index < len(tabs):
+            current_tab = tabs[index]
+            if current_tab.agent:
+                self.update_status_bar(current_tab.agent.model_name)
+
+    def switch_current_model(self, event):
+        """切换当前标签页的模型"""
+        current_tab = self.tab_widget.currentWidget()
+        if hasattr(current_tab, 'switch_model'):
+            current_tab.switch_model()
+
+
+def main():
+    app = QApplication(sys.argv)
+
+    # 设置应用程序样式
+    app.setStyle('Fusion')
+
+    # 设置Segoe UI字体为默认字体
+    font_id = QFontDatabase.addApplicationFont("Segoe UI")
+    if font_id != -1:
+        font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
+        app.setFont(QFont(font_family, 9))
+    else:
+        app.setFont(QFont("Segoe UI", 9))
+
+    # 设置Fluent Design风格的暗色调色板
+    palette = QPalette()
+    palette.setColor(QPalette.Window, QColor(30, 30, 30))
+    palette.setColor(QPalette.WindowText, QColor(230, 230, 230))
+    palette.setColor(QPalette.Base, QColor(42, 42, 42))
+    palette.setColor(QPalette.AlternateBase, QColor(66, 66, 66))
+    palette.setColor(QPalette.ToolTipBase, QColor(47, 47, 47))
+    palette.setColor(QPalette.ToolTipText, QColor(230, 230, 230))
+    palette.setColor(QPalette.Text, QColor(230, 230, 230))
+    palette.setColor(QPalette.Button, QColor(93, 107, 153))
+    palette.setColor(QPalette.ButtonText, Qt.white)
+    palette.setColor(QPalette.BrightText, QColor(255, 255, 153))
+    palette.setColor(QPalette.Link, QColor(93, 107, 153))
+    palette.setColor(QPalette.Highlight, QColor(93, 107, 153))
+    palette.setColor(QPalette.HighlightedText, Qt.white)
+    app.setPalette(palette)
+
+    # 创建主窗口
+    window = MainWindow()
+    window.show()
+
+    sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    main()

@@ -22,8 +22,8 @@ tools_map_dict = {
 def main():
     # 提示词中必要的变量
     variables = {
-        "root_dir_path": "C:/alocation/projects/ai_programmer",
-        "cwd_path": "C:/alocation/projects/ai_programmer",
+        "root_dir_path": "C:/alocation/projects/cherry-studio",
+        "cwd_path": "C:/alocation/projects/cherry-studio",
     }
 
     # 选择模式

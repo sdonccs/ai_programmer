@@ -8,7 +8,7 @@ siliconflow_client: OpenAI = OpenAI(
     api_key=os.getenv("SILICONFLOW_API_KEY"),
 )
 siliconflow_model_names = {
-    "deepseek-ai": ["deepseek-ai/DeepSeek-V3", "deepseek-ai/DeepSeek-R1"],
+    "deepseek-ai": ["Pro/deepseek-ai/DeepSeek-V3", "Pro/deepseek-ai/DeepSeek-R1"],
     "moonshotai": ["moonshotai/Kimi-K2-Instruct"],
     "MiniMaxAI": ["MiniMaxAI/MiniMax-M1-80k"]
 }

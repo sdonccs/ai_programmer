@@ -2,7 +2,7 @@ import os
 import shutil
 
 
-def get_dir_tree(dir_path, show_hidden = True, max_depth = None):
+def get_dir_tree(dir_path, show_hidden = True, max_depth = None, ignore_set = None):
     """
     对应LS工具
     生成标准树形结构的目录显示
@@ -11,6 +11,7 @@ def get_dir_tree(dir_path, show_hidden = True, max_depth = None):
         dir_path: 目录路径
         show_hidden: 是否显示隐藏文件/目录，通常显示
         max_depth: 最大递归深度，None表示无限制，通常无限制
+        ignore_set: 要忽略的文件/目录名称集合，这些项目完全不显示在结果中
     """
     # 检查路径是否存在
     if not os.path.exists(dir_path):
@@ -20,7 +21,12 @@ def get_dir_tree(dir_path, show_hidden = True, max_depth = None):
     if not os.path.isdir(dir_path):
         return f"错误：'{dir_path}' 不是一个目录"
 
+    # 跳过的目录（显示但不展开内容）
     skip_dirs = {'.git', '.idea', '.vscode'}
+
+    # 设置默认忽略集合（完全不显示）
+    if ignore_set is None:
+        ignore_set = {'__pycache__', 'ttt.txt', 'ttt.py', 'ttt.ipynb'}
 
     def _build_tree(path, prefix = "", current_depth = 0):
         """递归构建树形结构"""
@@ -36,6 +42,9 @@ def get_dir_tree(dir_path, show_hidden = True, max_depth = None):
             # 过滤隐藏文件/目录
             if not show_hidden:
                 items = [item for item in items if not item.startswith('.')]
+
+            # 过滤要忽略的文件/目录（完全不显示）
+            items = [item for item in items if item not in ignore_set]
 
             # 分离目录和文件
             dirs = []
@@ -67,7 +76,7 @@ def get_dir_tree(dir_path, show_hidden = True, max_depth = None):
                     current_prefix = "├── "
                     next_prefix = prefix + "│   "
 
-                # 处理跳过的目录
+                # 处理跳过的目录（显示但不展开）
                 if item in skip_dirs and os.path.isdir(item_path):
                     tree_str += f"{prefix}{current_prefix}{item}/\n"
                     tree_str += f"{next_prefix}...\n"
@@ -76,13 +85,12 @@ def get_dir_tree(dir_path, show_hidden = True, max_depth = None):
                 # 显示当前项
                 if os.path.isdir(item_path):
                     tree_str += f"{prefix}{current_prefix}{item}/\n"
-                    # 递归处理子目录（添加异常处理）
-                    if item not in skip_dirs:
-                        try:
-                            tree_str += _build_tree(item_path, next_prefix, current_depth + 1)
-                        except Exception as e:
-                            error_prefix = "└── " if is_last_item else "├── "
-                            tree_str += f"{next_prefix}{error_prefix}[子目录错误: {str(e)}]\n"
+                    # 递归处理子目录（跳过的目录不会到达这里）
+                    try:
+                        tree_str += _build_tree(item_path, next_prefix, current_depth + 1)
+                    except Exception as e:
+                        error_prefix = "└── " if is_last_item else "├── "
+                        tree_str += f"{next_prefix}{error_prefix}[子目录错误: {str(e)}]\n"
                 else:
                     tree_str += f"{prefix}{current_prefix}{item}\n"
 
