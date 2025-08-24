@@ -177,7 +177,7 @@ def create_file(file_path):
         return f"错误：创建文件时发生错误 - {str(e)}"
 
 
-def edit_file(file_path, old_text = "", new_text = ""):
+def edit_file(file_path, new_text, old_text):
     """
     对应Edit工具
     通过用新文本替换旧文本来编辑指定文件

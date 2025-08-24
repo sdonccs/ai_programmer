@@ -36,7 +36,8 @@ def get_logger(logger_name: str, max_length: int = 3000):
     handler.setLevel(logging.INFO)
     handler.setFormatter(
         colorlog.ColoredFormatter(
-            '%(log_color)s%(asctime)s | %(name)s | %(levelname)s | %(message)s',
+            '%(log_color)s%(asctime)s | %(name)s | %(message)s',
+            datefmt='%H:%M:%S',
             log_colors={
                 'DEBUG': 'cyan',
                 'INFO': 'green',
