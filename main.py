@@ -11,12 +11,12 @@ def main():
     edit_mode_agent = Agent(
         agent_name="edit_mode_agent",
         client=openrouter_client,
-        model_name=openrouter_model_names["qwen"][0],
+        model_name=openrouter_model_names["anthropic"][0],
         system_prompt=get_prompt(
             prompt_name="edit_mode_system",
             variables={
-                "root_dir_path": "C:/alocation/projects/cherry-studio",
-                "cwd_path": "C:/alocation/projects/cherry-studio",
+                "root_dir_path": "C:/alocation/projects/ai_programmer",
+                "cwd_path": "C:/alocation/projects/ai_programmer",
             }
         ),
         tools=edit_mode_tools,
