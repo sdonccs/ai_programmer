@@ -87,6 +87,35 @@ class ChatWidget(QWidget):
         self.chat_display.setReadOnly(True)
         self.chat_display.setFont(QFont("Consolas", 10))
         self.chat_display.setStyleSheet("background-color: #FFFFFF;")
+        vertical_scrollbar_style = """
+        QScrollBar:vertical {
+            background: transparent;
+            width: 10px;
+            margin: 0px;
+        }
+
+        QScrollBar::handle:vertical {
+            background: #E6E6E6;
+            min-height: 20px;
+        }
+
+        QScrollBar::handle:vertical:hover {
+            background: #C8C8C8;
+        }
+
+        QScrollBar::handle:vertical:pressed {
+            background: #C8C8C8;
+        }
+
+        QScrollBar::add-line:vertical {
+            height: 0px;
+        }
+
+        QScrollBar::sub-line:vertical {
+            height: 0px;
+        }
+        """
+        self.chat_display.verticalScrollBar().setStyleSheet(vertical_scrollbar_style)
         layout.addWidget(self.chat_display)
 
         input_layout = QHBoxLayout()
