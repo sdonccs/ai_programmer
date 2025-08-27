@@ -73,7 +73,7 @@ class Agent:
                 tool_args = json.loads(assistant_tool_call["function"]["arguments"])
                 tool_id = assistant_tool_call["id"]
                 tool_return = tool(**tool_args)
-                tool_content = json.dumps(tool_return, ensure_ascii=False)
+                tool_content = str(tool_return)
 
                 self.messages.append(
                     {
