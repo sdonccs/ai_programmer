@@ -3,9 +3,9 @@ from datetime import datetime
 
 from PySide6.QtCore import Qt, QObject, QThread, Signal
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPlainTextEdit, QPushButton
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPlainTextEdit, QPushButton, QFrame, QLabel, QScrollArea
 )
-from PySide6.QtGui import QFont, QTextCursor, QShortcut, QFontDatabase, QTextTableFormat, QTextImageFormat, QTextCharFormat, QColor
+from PySide6.QtGui import QFont, QShortcut, QFontDatabase, QPixmap
 
 from helpers.agent import Agent
 from helpers.model_api_client import openrouter_client, openrouter_model_names
@@ -73,6 +73,65 @@ class AgentWorker(QObject):
             self.error.emit(str(e))
 
 
+class MessageWidget(QFrame):
+    delete_requested = Signal(object)
+
+    def __init__(self, avatar_path, sender, message_content, is_error = False):
+        super().__init__()
+
+        self.setFrameStyle(QFrame.NoFrame)
+        self.setStyleSheet("QFrame { background-color: white; }")
+
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(2, 2, 2, 2)
+        main_layout.setSpacing(5)
+
+        header_container = QWidget()
+        header_layout = QHBoxLayout(header_container)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setSpacing(5)
+
+        avatar_label = QLabel()
+        avatar_label.setFixedSize(32, 32)
+        pixmap = QPixmap(avatar_path)
+        avatar_label.setPixmap(pixmap.scaled(32, 32, Qt.KeepAspectRatio))
+        header_layout.addWidget(avatar_label)
+
+        info = QLabel()
+        info.setText(f"{sender}\n{datetime.now().strftime("%m/%d %H:%M")}")
+        header_layout.addWidget(info)
+
+        delete_button = QPushButton("✕")
+        delete_button.setFixedSize(26, 26)
+        delete_button.setStyleSheet("""
+            QPushButton {
+                border: none;
+                background-color: transparent;
+                color: #CCCCCC
+            }
+            QPushButton:hover {
+                background-color: #FFE6E6;
+                color: #FF0000;
+            }
+        """)
+        delete_button.setToolTip("删除这条消息")
+        delete_button.clicked.connect(lambda: self.delete_requested.emit(self))
+        header_layout.addWidget(delete_button)
+
+        main_layout.addWidget(header_container)
+
+        content_label = QLabel()
+        content_label.setWordWrap(True)
+        if is_error:
+            content_label.setStyleSheet("color: #FF0000;")
+            content_label.setText(f"错误: {message_content}")
+        else:
+            content_label.setText(message_content)
+        main_layout.addWidget(content_label)
+
+        self.setLayout(main_layout)
+
+
 class ChatWidget(QWidget):
     def __init__(self):
         super().__init__()
@@ -83,10 +142,9 @@ class ChatWidget(QWidget):
 
         layout = QVBoxLayout()
 
-        self.chat_display = QTextEdit()
-        self.chat_display.setReadOnly(True)
-        self.chat_display.setFont(QFont("Consolas", 10))
-        self.chat_display.setStyleSheet("background-color: #FFFFFF;")
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setStyleSheet("QScrollArea { background-color: #FFFFFF}")
         vertical_scrollbar_style = """
         QScrollBar:vertical {
             background: transparent;
@@ -115,8 +173,16 @@ class ChatWidget(QWidget):
             height: 0px;
         }
         """
-        self.chat_display.verticalScrollBar().setStyleSheet(vertical_scrollbar_style)
-        layout.addWidget(self.chat_display)
+        self.scroll_area.verticalScrollBar().setStyleSheet(vertical_scrollbar_style)
+
+        self.messages_widget = QWidget()
+        self.messages_layout = QVBoxLayout(self.messages_widget)
+        self.messages_layout.setContentsMargins(0, 0, 0, 0)
+        self.messages_layout.setSpacing(0)
+        self.messages_layout.addStretch()
+        self.scroll_area.setWidget(self.messages_widget)
+
+        layout.addWidget(self.scroll_area)
 
         input_layout = QHBoxLayout()
 
@@ -159,83 +225,31 @@ class ChatWidget(QWidget):
         self.agent_worker.error.connect(self.on_agent_error)
 
         self.thread.start()
-    def insert_message(self, avatar_path, sender_name, message_content, is_error = False):
-        cursor = self.chat_display.textCursor()
-        cursor.movePosition(QTextCursor.End)
 
-        # 创建表格格式
-        table_format = QTextTableFormat()
-        table_format.setCellPadding(2)
-        table_format.setCellSpacing(0)
-        # table_format.setBorderStyle(QTextTableFormat.BorderStyle_Solid)
-        # table_format.setBorder(2)
-        # table_format.setBorderBrush(QColor("#000000"))
-        # table_format.setBorderCollapse(False)
+    def insert_message(self, avatar_path, sender, message_content, is_error = False):
+        message_widget = MessageWidget(avatar_path, sender, message_content, is_error)
+        message_widget.delete_requested.connect(self.delete_message)
 
+        self.messages_layout.insertWidget(self.messages_layout.count() - 1, message_widget)
 
-        # 插入表格 (2行2列)
-        table = cursor.insertTable(2, 2, table_format)
+        separator = QFrame()
+        separator.setFrameShape(QFrame.HLine)
+        self.messages_layout.insertWidget(self.messages_layout.count() - 1, separator)
 
-        # 第一行第一列：插入头像
-        cell_00 = table.cellAt(0, 0)
-        cell_cursor = cell_00.firstCursorPosition()
+        self.scroll_area.verticalScrollBar().setValue(self.scroll_area.verticalScrollBar().maximum())
 
-        # 插入头像图片
-        image_format = QTextImageFormat()
-        image_format.setName(avatar_path)
-        image_format.setWidth(32)
-        image_format.setHeight(32)
-        cell_cursor.insertImage(image_format)
+    def delete_message(self, message_widget):
+        for i in range(self.messages_layout.count()):
+            if self.messages_layout.itemAt(i).widget() == message_widget:
+                widget_index = i
+                break
 
-        # 第一行第二列：插入发送者名称和时间
-        cell_01 = table.cellAt(0, 1)
-        cell_cursor = cell_01.firstCursorPosition()
+        self.messages_layout.removeWidget(message_widget)
+        message_widget.deleteLater()
 
-        # 设置粗体格式用于发送者名称
-        bold_format = QTextCharFormat()
-        font = QFont(f"{self.font_family}")
-        font.setPixelSize(14)
-        font.setBold(True)
-        bold_format.setFont(font)
-
-        cell_cursor.insertText(sender_name, bold_format)
-        cell_cursor.insertText("\n")
-
-        # 设置时间格式
-        time_format = QTextCharFormat()
-        time_format.setForeground(QColor("#A2A2A2"))
-        font = QFont(f"{self.font_family}")
-        font.setPixelSize(10)
-        time_format.setFont(font)
-
-        current_time = datetime.now().strftime("%m/%d %H:%M")
-        cell_cursor.insertText(current_time, time_format)
-
-        # 第二行第二列：插入消息内容
-        cell_11 = table.cellAt(1, 1)
-        cell_cursor = cell_11.firstCursorPosition()
-
-        # 设置消息内容格式
-        content_format = QTextCharFormat()
-        font = QFont(f"{self.font_family}")
-        font.setPixelSize(14)
-        content_format.setFont(font)
-
-        if is_error:
-            content_format.setForeground(QColor("#FF0000"))
-            cell_cursor.insertText(f"错误: {message_content}", content_format)
-        else:
-            cell_cursor.insertText(message_content, content_format)
-
-        # 移动到表格后面
-        cursor.movePosition(QTextCursor.End)
-
-        # 插入分隔线
-        cursor.insertHtml("<hr>")
-
-        # 确保滚动到底部
-        self.chat_display.setTextCursor(cursor)
-        self.chat_display.ensureCursorVisible()
+        separator = self.messages_layout.itemAt(widget_index).widget()
+        self.messages_layout.removeWidget(separator)
+        separator.deleteLater()
 
     def send_message(self):
         self.send_button.setEnabled(False)
