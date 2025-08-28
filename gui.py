@@ -31,8 +31,7 @@ class AgentWorker(QObject):
                 "cwd_path": "C:/alocation/projects/cherry-studio"
             }
         ),
-        tools=edit_mode_tools,
-        tools_mapping=edit_mode_tools_mapping
+        tools=edit_mode_tools
     )
 
     def __init__(self):
@@ -48,7 +47,7 @@ class AgentWorker(QObject):
             while assistant_tool_calls is not None:
                 for assistant_tool_call in assistant_tool_calls:
                     tool_name = assistant_tool_call["function"]["name"]
-                    tool = AgentWorker.main_agent.tools_mapping[tool_name]
+                    tool = edit_mode_tools_mapping[tool_name]
                     tool_args = json.loads(assistant_tool_call["function"]["arguments"])
                     tool_id = assistant_tool_call["id"]
                     tool_return = tool(**tool_args)
