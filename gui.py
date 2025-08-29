@@ -156,6 +156,9 @@ class MessageWidget(QFrame):
         content_label.setFont(font)
         content_label.setWordWrap(True)
         content_label.setText(message_content)
+        content_label.setTextInteractionFlags(
+            Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard
+        )
         main_layout.addWidget(content_label)
 
         self.setLayout(main_layout)
