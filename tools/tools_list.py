@@ -1,7 +1,7 @@
 from tools.file_ops import get_dir_tree, read_file, create_file, edit_file, delete_file_or_dir
 
 
-edit_mode_tools = [
+tools_list = [
     {
         "type": "function",
         "function": {
@@ -97,7 +97,7 @@ edit_mode_tools = [
     }
 ]
 
-edit_mode_tools_mapping = {
+tools_mapping = {
     "get_dir_tree": get_dir_tree,
     "read_file": read_file,
     "create_file": create_file,

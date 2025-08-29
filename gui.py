@@ -11,7 +11,7 @@ from PySide6.QtGui import QFont, QShortcut, QFontDatabase, QPixmap
 from helpers.agent import Agent
 from helpers.model_api_client import openrouter_client, openrouter_model_names
 from helpers.get_prompt import get_prompt
-from tools.tools_list import edit_mode_tools, edit_mode_tools_mapping
+from tools.tools_list import tools_list, tools_mapping
 
 
 class AgentWorker(QObject):
@@ -26,13 +26,13 @@ class AgentWorker(QObject):
         client=openrouter_client,
         model_name=openrouter_model_names["moonshotai"][0],
         system_prompt=get_prompt(
-            prompt_name="edit_mode_system",
+            prompt_name="main_system",
             variables={
                 "root_dir_path": "C:/alocation/projects/cherry-studio",
                 "cwd_path": "C:/alocation/projects/cherry-studio"
             }
         ),
-        tools=edit_mode_tools
+        tools=tools_list
     )
 
     def __init__(self):
@@ -50,7 +50,7 @@ class AgentWorker(QObject):
         while assistant_tool_calls is not None:
             for assistant_tool_call in assistant_tool_calls:
                 tool_name = assistant_tool_call["function"]["name"]
-                tool = edit_mode_tools_mapping[tool_name]
+                tool = tools_mapping[tool_name]
                 tool_args = json.loads(assistant_tool_call["function"]["arguments"])
                 tool_id = assistant_tool_call["id"]
                 tool_return = tool(**tool_args)
