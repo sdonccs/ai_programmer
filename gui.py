@@ -1,4 +1,5 @@
 import json
+import uuid
 from datetime import datetime
 
 from PySide6.QtCore import Qt, QObject, QThread, Signal
@@ -14,10 +15,10 @@ from tools.tools_list import edit_mode_tools, edit_mode_tools_mapping
 
 
 class AgentWorker(QObject):
-    get_assistant_message_dict = Signal(dict)
-    get_tool_result = Signal(str, str)
+    get_assistant_message_dict = Signal(object, dict)
+    get_tool_result = Signal(object, str, str)
     finished = Signal()
-    error = Signal(str)
+    get_message_id = Signal(object, int)
     start_work = Signal(str)
 
     main_agent = Agent(
@@ -39,44 +40,52 @@ class AgentWorker(QObject):
         self.start_work.connect(self.run)
 
     def run(self, user_content):
-        try:
-            message_dict = AgentWorker.main_agent.user_call(user_content)
-            self.get_assistant_message_dict.emit(message_dict)
+        message_dict = AgentWorker.main_agent.user_call(user_content)
+        assistant_message_id = uuid.uuid4()
+        assistant_message_index = len(AgentWorker.main_agent.messages) - 1
+        self.get_message_id.emit(assistant_message_id, assistant_message_index)
+        self.get_assistant_message_dict.emit(assistant_message_id, message_dict)
+
+        assistant_tool_calls = message_dict.get("tool_calls")
+        while assistant_tool_calls is not None:
+            for assistant_tool_call in assistant_tool_calls:
+                tool_name = assistant_tool_call["function"]["name"]
+                tool = edit_mode_tools_mapping[tool_name]
+                tool_args = json.loads(assistant_tool_call["function"]["arguments"])
+                tool_id = assistant_tool_call["id"]
+                tool_return = tool(**tool_args)
+                tool_content = str(tool_return)
+
+                AgentWorker.main_agent.messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tool_id,
+                        "content": tool_content
+                    }
+                )
+                tool_message_id = uuid.uuid4()
+                tool_message_index = len(AgentWorker.main_agent.messages) - 1
+                self.get_message_id.emit(tool_message_id, tool_message_index)
+
+                self.get_tool_result.emit(tool_message_id, tool_name, tool_content)
+            message_dict = AgentWorker.main_agent()
+            assistant_message_id = uuid.uuid4()
+            assistant_message_index = len(AgentWorker.main_agent.messages) - 1
+            self.get_message_id.emit(assistant_message_id, assistant_message_index)
+            self.get_assistant_message_dict.emit(assistant_message_id, message_dict)
 
             assistant_tool_calls = message_dict.get("tool_calls")
-            while assistant_tool_calls is not None:
-                for assistant_tool_call in assistant_tool_calls:
-                    tool_name = assistant_tool_call["function"]["name"]
-                    tool = edit_mode_tools_mapping[tool_name]
-                    tool_args = json.loads(assistant_tool_call["function"]["arguments"])
-                    tool_id = assistant_tool_call["id"]
-                    tool_return = tool(**tool_args)
-                    tool_content = str(tool_return)
 
-                    AgentWorker.main_agent.messages.append(
-                        {
-                            "role": "tool",
-                            "tool_call_id": tool_id,
-                            "content": tool_content
-                        }
-                    )
-                    self.get_tool_result.emit(tool_name, tool_content)
-                message_dict = AgentWorker.main_agent()
-                self.get_assistant_message_dict.emit(message_dict)
-
-                assistant_tool_calls = message_dict.get("tool_calls")
-
-            self.finished.emit()
-
-        except Exception as e:
-            self.error.emit(str(e))
+        self.finished.emit()
 
 
 class MessageWidget(QFrame):
-    delete_requested = Signal(object)
+    delete_requested = Signal(object, object)
 
-    def __init__(self, avatar_path, sender, message_content, is_error = False):
+    def __init__(self, message_id, avatar_path, sender, message_content):
         super().__init__()
+
+        self.message_id = message_id
 
         self.setFrameStyle(QFrame.NoFrame)
         self.setStyleSheet("QFrame { background-color: white; }")
@@ -114,18 +123,14 @@ class MessageWidget(QFrame):
             }
         """)
         delete_button.setToolTip("删除这条消息")
-        delete_button.clicked.connect(lambda: self.delete_requested.emit(self))
+        delete_button.clicked.connect(lambda: self.delete_requested.emit(self.message_id, self))
         header_layout.addWidget(delete_button)
 
         main_layout.addWidget(header_container)
 
         content_label = QLabel()
         content_label.setWordWrap(True)
-        if is_error:
-            content_label.setStyleSheet("color: #FF0000;")
-            content_label.setText(f"错误: {message_content}")
-        else:
-            content_label.setText(message_content)
+        content_label.setText(message_content)
         main_layout.addWidget(content_label)
 
         self.setLayout(main_layout)
@@ -221,12 +226,17 @@ class ChatWidget(QWidget):
         self.agent_worker.get_assistant_message_dict.connect(self.on_get_assistant_message_dict)
         self.agent_worker.get_tool_result.connect(self.on_get_tool_result)
         self.agent_worker.finished.connect(self.on_finished)
-        self.agent_worker.error.connect(self.on_agent_error)
+        self.agent_worker.get_message_id.connect(self.on_get_message_id)
+        self.id_to_index_mapping = {}
 
         self.thread.start()
 
-    def insert_message(self, avatar_path, sender, message_content, is_error = False):
-        message_widget = MessageWidget(avatar_path, sender, message_content, is_error)
+    def on_get_message_id(self, message_uid, message_index):
+        self.id_to_index_mapping[message_uid] = message_index
+        # print(self.id_to_index_mapping)
+
+    def insert_message(self, message_id, avatar_path, sender, message_content):
+        message_widget = MessageWidget(message_id, avatar_path, sender, message_content)
         message_widget.delete_requested.connect(self.delete_message)
 
         self.messages_layout.insertWidget(self.messages_layout.count() - 1, message_widget)
@@ -237,7 +247,14 @@ class ChatWidget(QWidget):
 
         self.scroll_area.verticalScrollBar().setValue(self.scroll_area.verticalScrollBar().maximum())
 
-    def delete_message(self, message_widget):
+    def delete_message(self, message_id ,message_widget):
+        deleted_index = self.id_to_index_mapping[message_id]
+        del self.agent_worker.main_agent.messages[deleted_index]
+        del self.id_to_index_mapping[message_id]
+        for id, index in self.id_to_index_mapping.items():
+            if index > deleted_index:
+                self.id_to_index_mapping[id] = index - 1
+
         for i in range(self.messages_layout.count()):
             if self.messages_layout.itemAt(i).widget() == message_widget:
                 widget_index = i
@@ -261,30 +278,28 @@ class ChatWidget(QWidget):
             self.send_button.setText("发送")
             return
 
-        self.insert_message("./assets/images/user.png", "用户", raw)
+        user_message_id = uuid.uuid4()
+        user_message_index = len(self.agent_worker.main_agent.messages)
+        self.on_get_message_id(user_message_id, user_message_index)
+
+        self.insert_message(user_message_id, "./assets/images/user.png", "用户", raw)
 
         self.input_text.clear()
 
         self.agent_worker.start_work.emit(raw)
 
-    def on_get_assistant_message_dict(self, message_dict):
+    def on_get_assistant_message_dict(self, message_id, message_dict):
         if message_dict.get("tool_calls") is not None:
             display = f"{message_dict.get('content')}\n<tool_calls>\n{message_dict.get('tool_calls')}\n</tool_calls>"
         else:
             display = f"{message_dict.get('content')}"
 
-        self.insert_message(self.model_avatar_path, self.model_name, display)
+        self.insert_message(message_id, self.model_avatar_path, self.model_name, display)
 
-    def on_get_tool_result(self, tool_name, tool_content):
-        self.insert_message("./assets/images/tool.jpg", tool_name, tool_content)
+    def on_get_tool_result(self, message_id, tool_name, tool_content):
+        self.insert_message(message_id, "./assets/images/tool.jpg", tool_name, tool_content)
 
     def on_finished(self):
-        self.send_button.setEnabled(True)
-        self.send_button.setText("发送")
-
-    def on_agent_error(self, error_str):
-        self.insert_message(self.model_avatar_path, self.model_name, error_str, is_error=True)
-
         self.send_button.setEnabled(True)
         self.send_button.setText("发送")
 
