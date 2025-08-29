@@ -85,6 +85,10 @@ class MessageWidget(QFrame):
     def __init__(self, message_id, avatar_path, sender, message_content):
         super().__init__()
 
+        font_id = QFontDatabase.addApplicationFont('./assets/fonts/TwemojiCountryFlags.ttf')
+        font_families = QFontDatabase.applicationFontFamilies(font_id)
+        self.font_family = font_families[0]
+
         self.message_id = message_id
 
         self.setFrameStyle(QFrame.NoFrame)
@@ -102,12 +106,31 @@ class MessageWidget(QFrame):
         avatar_label = QLabel()
         avatar_label.setFixedSize(32, 32)
         pixmap = QPixmap(avatar_path)
-        avatar_label.setPixmap(pixmap.scaled(32, 32, Qt.KeepAspectRatio))
+        avatar_label.setPixmap(pixmap.scaled(32, 32, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         header_layout.addWidget(avatar_label)
 
-        info = QLabel()
-        info.setText(f"{sender}\n{datetime.now().strftime("%m/%d %H:%M")}")
-        header_layout.addWidget(info)
+        info_container = QWidget()
+        info_layout = QVBoxLayout(info_container)
+        info_layout.setContentsMargins(0, 0, 0, 0)
+        info_layout.setSpacing(4)
+
+        sender_name = QLabel()
+        font = QFont(f"{self.font_family}")
+        font.setPixelSize(14)
+        sender_name.setFont(font)
+        sender_name.setStyleSheet("font-weight: bold")
+        sender_name.setText(sender)
+        info_layout.addWidget(sender_name)
+
+        time_info = QLabel()
+        font = QFont(f"{self.font_family}")
+        font.setPixelSize(10)
+        time_info.setFont(font)
+        time_info.setStyleSheet("color: #A0A0A0")
+        time_info.setText(datetime.now().strftime("%m/%d %H:%M"))
+        info_layout.addWidget(time_info)
+
+        header_layout.addWidget(info_container)
 
         delete_button = QPushButton("✕")
         delete_button.setFixedSize(26, 26)
@@ -122,13 +145,15 @@ class MessageWidget(QFrame):
                 color: #FF0000;
             }
         """)
-        delete_button.setToolTip("删除这条消息")
         delete_button.clicked.connect(lambda: self.delete_requested.emit(self.message_id, self))
         header_layout.addWidget(delete_button)
 
         main_layout.addWidget(header_container)
 
         content_label = QLabel()
+        font = QFont(f"{self.font_family}")
+        font.setPixelSize(14)
+        content_label.setFont(font)
         content_label.setWordWrap(True)
         content_label.setText(message_content)
         main_layout.addWidget(content_label)
@@ -180,6 +205,7 @@ class ChatWidget(QWidget):
         self.scroll_area.verticalScrollBar().setStyleSheet(vertical_scrollbar_style)
 
         self.messages_widget = QWidget()
+        self.messages_widget.setStyleSheet("background-color: #FFFFFF")
         self.messages_layout = QVBoxLayout(self.messages_widget)
         self.messages_layout.setContentsMargins(0, 0, 0, 0)
         self.messages_layout.setSpacing(0)
@@ -200,6 +226,9 @@ class ChatWidget(QWidget):
         input_layout.addWidget(self.input_text)
 
         self.send_button = QPushButton("发送")
+        font = QFont(f"{self.font_family}")
+        font.setPixelSize(14)
+        self.send_button.setFont(font)
         self.send_button.setMaximumWidth(80)
         self.send_button.clicked.connect(self.send_message)
         short_cut = QShortcut(Qt.CTRL | Qt.Key_Return, self.input_text)
