@@ -2,9 +2,10 @@ import json
 import uuid
 from datetime import datetime
 
+import markdown
 from PySide6.QtCore import Qt, QObject, QThread, Signal
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPlainTextEdit, QPushButton, QFrame, QLabel, QScrollArea
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPlainTextEdit, QPushButton, QFrame, QLabel, QScrollArea, QTextEdit
 )
 from PySide6.QtGui import QFont, QShortcut, QFontDatabase, QPixmap
 
@@ -79,6 +80,22 @@ class AgentWorker(QObject):
         self.finished.emit()
 
 
+class AutoResizingTextEdit(QTextEdit):
+    def __init__(self):
+        super().__init__()
+
+        self.document().documentLayout().documentSizeChanged.connect(self.on_document_size_changed)
+
+        self.setReadOnly(True)
+        self.setFrameStyle(QFrame.NoFrame)
+        self.setStyleSheet("background: transparent; border: none;")
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+    def on_document_size_changed(self, new_size):
+        self.setFixedHeight(int(new_size.height()))
+
+
 class MessageWidget(QFrame):
     delete_requested = Signal(object, object)
 
@@ -135,31 +152,43 @@ class MessageWidget(QFrame):
         delete_button = QPushButton("✕")
         delete_button.setFixedSize(26, 26)
         delete_button.setStyleSheet("""
-            QPushButton {
-                border: none;
-                background-color: transparent;
-                color: #CCCCCC
-            }
-            QPushButton:hover {
-                background-color: #FFE6E6;
-                color: #FF0000;
-            }
+        QPushButton {
+            border: none;
+            background-color: transparent;
+            color: #CCCCCC
+        }
+        QPushButton:hover {
+            background-color: #FFE6E6;
+            color: #FF0000;
+        }
         """)
         delete_button.clicked.connect(lambda: self.delete_requested.emit(self.message_id, self))
         header_layout.addWidget(delete_button)
 
         main_layout.addWidget(header_container)
 
-        content_label = QLabel()
-        font = QFont(f"{self.font_family}")
-        font.setPixelSize(14)
-        content_label.setFont(font)
-        content_label.setWordWrap(True)
-        content_label.setText(message_content)
-        content_label.setTextInteractionFlags(
-            Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard
-        )
-        main_layout.addWidget(content_label)
+        self.content_display = AutoResizingTextEdit()
+        document_style = """
+        pre {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: "Courier New", monospace;
+        }
+        blockquote {
+            border-left: 4px solid #ccc;
+            padding-left: 10px;
+            color: #666;
+        }
+        """
+        self.content_display.document().setDefaultStyleSheet(document_style)
+        html_content = markdown.markdown(message_content, extensions=['fenced_code'])
+        self.content_display.setHtml(html_content)
+        main_layout.addWidget(self.content_display)
+
+        separator = QFrame()
+        separator.setFrameShape(QFrame.HLine)
+        main_layout.addWidget(separator)
 
         self.setLayout(main_layout)
 
@@ -207,20 +236,20 @@ class ChatWidget(QWidget):
         """
         self.scroll_area.verticalScrollBar().setStyleSheet(vertical_scrollbar_style)
 
-        self.messages_widget = QWidget()
-        self.messages_widget.setStyleSheet("background-color: #FFFFFF")
-        self.messages_layout = QVBoxLayout(self.messages_widget)
+        self.messages_display = QWidget()
+        self.messages_display.setStyleSheet("background-color: #FFFFFF")
+        self.messages_layout = QVBoxLayout(self.messages_display)
         self.messages_layout.setContentsMargins(0, 0, 0, 0)
         self.messages_layout.setSpacing(0)
         self.messages_layout.addStretch()
-        self.scroll_area.setWidget(self.messages_widget)
+        self.scroll_area.setWidget(self.messages_display)
 
         layout.addWidget(self.scroll_area)
 
         input_layout = QHBoxLayout()
 
         self.input_text = QPlainTextEdit()
-        self.input_text.setMaximumHeight(100)
+        self.input_text.setFixedHeight(100)
         self.input_text.setPlaceholderText("在这里输入内容，按Ctrl+Enter发送")
         self.input_text.setStyleSheet("background-color: #F3F3F3;")
         font = QFont(f"{self.font_family}")
@@ -232,7 +261,7 @@ class ChatWidget(QWidget):
         font = QFont(f"{self.font_family}")
         font.setPixelSize(14)
         self.send_button.setFont(font)
-        self.send_button.setMaximumWidth(80)
+        self.send_button.setFixedSize(50, 100)
         self.send_button.clicked.connect(self.send_message)
         short_cut = QShortcut(Qt.CTRL | Qt.Key_Return, self.input_text)
         short_cut.activated.connect(self.send_message)
@@ -271,11 +300,7 @@ class ChatWidget(QWidget):
         message_widget = MessageWidget(message_id, avatar_path, sender, message_content)
         message_widget.delete_requested.connect(self.delete_message)
 
-        self.messages_layout.insertWidget(self.messages_layout.count() - 1, message_widget)
-
-        separator = QFrame()
-        separator.setFrameShape(QFrame.HLine)
-        self.messages_layout.insertWidget(self.messages_layout.count() - 1, separator)
+        self.messages_layout.insertWidget(self.messages_layout.count() - 1, message_widget, 0, Qt.AlignTop)
 
         self.scroll_area.verticalScrollBar().setValue(self.scroll_area.verticalScrollBar().maximum())
 
@@ -287,27 +312,16 @@ class ChatWidget(QWidget):
             if index > deleted_index:
                 self.id_to_index_mapping[id] = index - 1
 
-        for i in range(self.messages_layout.count()):
-            if self.messages_layout.itemAt(i).widget() == message_widget:
-                widget_index = i
-                break
-
         self.messages_layout.removeWidget(message_widget)
         message_widget.deleteLater()
 
-        separator = self.messages_layout.itemAt(widget_index).widget()
-        self.messages_layout.removeWidget(separator)
-        separator.deleteLater()
-
     def send_message(self):
         self.send_button.setEnabled(False)
-        self.send_button.setText("处理中……")
 
         raw = self.input_text.toPlainText()
 
         if raw.strip() == "":
             self.send_button.setEnabled(True)
-            self.send_button.setText("发送")
             return
 
         user_message_id = uuid.uuid4()
@@ -322,7 +336,7 @@ class ChatWidget(QWidget):
 
     def on_get_assistant_message_dict(self, message_id, message_dict):
         if message_dict.get("tool_calls") is not None:
-            display = f"{message_dict.get('content')}\n<tool_calls>\n{message_dict.get('tool_calls')}\n</tool_calls>"
+            display = f"{message_dict.get('content')}\n{message_dict.get('tool_calls')}"
         else:
             display = f"{message_dict.get('content')}"
 
@@ -333,7 +347,6 @@ class ChatWidget(QWidget):
 
     def on_finished(self):
         self.send_button.setEnabled(True)
-        self.send_button.setText("发送")
 
     def closeEvent(self, event):
         self.thread.quit()
