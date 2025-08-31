@@ -2,10 +2,9 @@ import json
 import uuid
 from datetime import datetime
 
-import markdown
 from PySide6.QtCore import Qt, QObject, QThread, Signal
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPlainTextEdit, QPushButton, QFrame, QLabel, QScrollArea, QTextEdit
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPlainTextEdit, QPushButton, QFrame, QLabel, QScrollArea, QTextBrowser
 )
 from PySide6.QtGui import QFont, QShortcut, QFontDatabase, QPixmap
 
@@ -86,7 +85,7 @@ class AgentWorker(QObject):
         self.finished.emit()
 
 
-class AutoResizingTextEdit(QTextEdit):
+class AutoResizingTextBrowser(QTextBrowser):
     def __init__(self):
         super().__init__()
 
@@ -97,7 +96,6 @@ class AutoResizingTextEdit(QTextEdit):
         font = QFont(self.font_family)
         font.setPixelSize(14)
         self.setFont(font)
-        self.setReadOnly(True)
         self.setFrameStyle(QFrame.NoFrame)
         self.setStyleSheet("background: transparent; border: none;")
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -176,7 +174,7 @@ class MessageWidget(QFrame):
 
         main_layout.addWidget(header_container)
 
-        self.content_display = AutoResizingTextEdit()
+        self.content_display = AutoResizingTextBrowser()
         self.content_display.setPlainText(message_content)
         main_layout.addWidget(self.content_display)
 
