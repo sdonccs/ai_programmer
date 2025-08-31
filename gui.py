@@ -15,6 +15,12 @@ from helpers.get_prompt import get_prompt
 from tools.tools_list import tools_list, tools_mapping
 
 
+def load_font():
+    font_id = QFontDatabase.addApplicationFont('./assets/fonts/TwemojiCountryFlags.ttf')
+    font_families = QFontDatabase.applicationFontFamilies(font_id)
+    return font_families[0]
+
+
 class AgentWorker(QObject):
     get_assistant_message_dict = Signal(object, dict)
     get_tool_result = Signal(object, str, str)
@@ -84,8 +90,13 @@ class AutoResizingTextEdit(QTextEdit):
     def __init__(self):
         super().__init__()
 
+        self.font_family = load_font()
+
         self.document().documentLayout().documentSizeChanged.connect(self.on_document_size_changed)
 
+        font = QFont(self.font_family)
+        font.setPixelSize(14)
+        self.setFont(font)
         self.setReadOnly(True)
         self.setFrameStyle(QFrame.NoFrame)
         self.setStyleSheet("background: transparent; border: none;")
@@ -102,9 +113,7 @@ class MessageWidget(QFrame):
     def __init__(self, message_id, avatar_path, sender, message_content, markdown_rendering):
         super().__init__()
 
-        font_id = QFontDatabase.addApplicationFont('./assets/fonts/TwemojiCountryFlags.ttf')
-        font_families = QFontDatabase.applicationFontFamilies(font_id)
-        self.font_family = font_families[0]
+        self.font_family = load_font()
 
         self.message_id = message_id
 
@@ -132,7 +141,7 @@ class MessageWidget(QFrame):
         info_layout.setSpacing(4)
 
         sender_name = QLabel()
-        font = QFont(f"{self.font_family}")
+        font = QFont(self.font_family)
         font.setPixelSize(14)
         sender_name.setFont(font)
         sender_name.setStyleSheet("font-weight: bold")
@@ -140,7 +149,7 @@ class MessageWidget(QFrame):
         info_layout.addWidget(sender_name)
 
         time_info = QLabel()
-        font = QFont(f"{self.font_family}")
+        font = QFont(self.font_family)
         font.setPixelSize(10)
         time_info.setFont(font)
         time_info.setStyleSheet("color: #A0A0A0")
@@ -200,9 +209,7 @@ class ChatWidget(QWidget):
     def __init__(self):
         super().__init__()
 
-        font_id = QFontDatabase.addApplicationFont('./assets/fonts/TwemojiCountryFlags.ttf')
-        font_families = QFontDatabase.applicationFontFamilies(font_id)
-        self.font_family = font_families[0]
+        self.font_family = load_font()
 
         layout = QVBoxLayout()
 
@@ -255,13 +262,13 @@ class ChatWidget(QWidget):
         self.input_text.setFixedHeight(100)
         self.input_text.setPlaceholderText("在这里输入内容，按Ctrl+Enter发送")
         self.input_text.setStyleSheet("background-color: #F3F3F3;")
-        font = QFont(f"{self.font_family}")
+        font = QFont(self.font_family)
         font.setPixelSize(14)
         self.input_text.setFont(font)
         input_layout.addWidget(self.input_text)
 
         self.send_button = QPushButton("发送")
-        font = QFont(f"{self.font_family}")
+        font = QFont(self.font_family)
         font.setPixelSize(14)
         self.send_button.setFont(font)
         self.send_button.setFixedSize(50, 100)
