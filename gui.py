@@ -110,7 +110,7 @@ class AutoResizingTextEdit(QTextEdit):
 class MessageWidget(QFrame):
     delete_requested = Signal(object, object)
 
-    def __init__(self, message_id, avatar_path, sender, message_content, markdown_rendering):
+    def __init__(self, message_id, avatar_path, sender, message_content):
         super().__init__()
 
         self.font_family = load_font()
@@ -177,25 +177,7 @@ class MessageWidget(QFrame):
         main_layout.addWidget(header_container)
 
         self.content_display = AutoResizingTextEdit()
-        if markdown_rendering == True:
-            document_style = """
-            pre {
-                background-color: #f0f0f0;
-                padding: 10px;
-                border-radius: 5px;
-                font-family: "Courier New", monospace;
-            }
-            blockquote {
-                border-left: 4px solid #ccc;
-                padding-left: 10px;
-                color: #666;
-            }
-            """
-            self.content_display.document().setDefaultStyleSheet(document_style)
-            html_content = markdown.markdown(message_content, extensions=['fenced_code'])
-            self.content_display.setHtml(html_content)
-        elif markdown_rendering == False:
-            self.content_display.setPlainText(message_content)
+        self.content_display.setPlainText(message_content)
         main_layout.addWidget(self.content_display)
 
         separator = QFrame()
@@ -306,8 +288,8 @@ class ChatWidget(QWidget):
         self.id_to_index_mapping[message_uid] = message_index
         # print(self.id_to_index_mapping)
 
-    def insert_message(self, message_id, avatar_path, sender, message_content, markdown_rendering):
-        message_widget = MessageWidget(message_id, avatar_path, sender, message_content, markdown_rendering)
+    def insert_message(self, message_id, avatar_path, sender, message_content):
+        message_widget = MessageWidget(message_id, avatar_path, sender, message_content)
         message_widget.delete_requested.connect(self.delete_message)
 
         self.messages_layout.insertWidget(self.messages_layout.count() - 1, message_widget, 0, Qt.AlignTop)
@@ -338,7 +320,7 @@ class ChatWidget(QWidget):
         user_message_index = len(self.agent_worker.main_agent.messages)
         self.on_get_message_id(user_message_id, user_message_index)
 
-        self.insert_message(user_message_id, "./assets/images/user.png", "用户", raw, False)
+        self.insert_message(user_message_id, "./assets/images/user.png", "用户", raw)
 
         self.input_text.clear()
 
@@ -350,10 +332,10 @@ class ChatWidget(QWidget):
         else:
             display = f"{message_dict.get('content')}"
 
-        self.insert_message(message_id, self.model_avatar_path, self.model_name, display, True)
+        self.insert_message(message_id, self.model_avatar_path, self.model_name, display)
 
     def on_get_tool_result(self, message_id, tool_name, tool_content):
-        self.insert_message(message_id, "./assets/images/tool.jpg", tool_name, tool_content, False)
+        self.insert_message(message_id, "./assets/images/tool.jpg", tool_name, tool_content)
 
     def on_finished(self):
         self.send_button.setEnabled(True)
