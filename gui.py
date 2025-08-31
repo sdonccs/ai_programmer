@@ -175,8 +175,9 @@ class MessageWidget(QFrame):
         main_layout.addWidget(header_container)
 
         self.content_display = AutoResizingTextBrowser()
+        # 暂时放弃markdown渲染
         if markdown_rendering == True:
-            ...
+            self.content_display.setPlainText(message_content)
         elif markdown_rendering == False:
             self.content_display.setPlainText(message_content)
         main_layout.addWidget(self.content_display)
