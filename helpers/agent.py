@@ -2,6 +2,8 @@ from openai import OpenAI
 from openai.types.chat import ChatCompletion
 from openai._types import NotGiven, NOT_GIVEN
 
+from helpers.model_api_client import thinking_model_names
+
 
 class Agent:
     def __init__(
@@ -15,6 +17,10 @@ class Agent:
         self.agent_name: str = agent_name
         self.client: OpenAI = client
         self.model_name: str = model_name
+        if self.model_name in thinking_model_names:
+            self.reasoning_effort = "high"
+        else:
+            self.reasoning_effort = NOT_GIVEN
 
         self.messages: list[dict] = []
         if system_prompt != "":
@@ -25,6 +31,7 @@ class Agent:
     def __call__(self) -> dict:
         response: ChatCompletion = self.client.chat.completions.create(
             model=self.model_name,
+            reasoning_effort=self.reasoning_effort,
             messages=self.messages,  # type: ignore
             tools=self.tools
         )

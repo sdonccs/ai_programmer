@@ -23,3 +23,5 @@ openrouter_model_names = {
         "moonshotai/kimi-k2"  # 综合能力第二（价格低）（工具调用能力中）
     ]
 }
+
+thinking_model_names = ["google/gemini-2.5-pro-preview", "anthropic/claude-sonnet-4", "anthropic/claude-opus-4"]
