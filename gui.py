@@ -162,10 +162,61 @@ QTextBrowser {{
         self.setStyleSheet(style_sheet)
 
 
+class MessageToolsCallWidget(QTextBrowser):
+    def __init__(self):
+        super().__init__()
+
+        self.font_family = load_font()
+
+        self.setFixedHeight(50)
+        font = QFont(self.font_family)
+        font.setPixelSize(14)
+        self.setFont(font)
+        style_sheet = f"""
+QTextBrowser {{
+    background-color: transparent; 
+    border: 1px solid gray;
+}}
+
+{vertical_scrollBar_style_sheet}
+"""
+        self.setStyleSheet(style_sheet)
+
+
+class ToolMessageWidget(QTextBrowser):
+    def __init__(self):
+        super().__init__()
+
+        self.font_family = load_font()
+
+        self.setFixedHeight(100)
+        font = QFont(self.font_family)
+        font.setPixelSize(14)
+        self.setFont(font)
+        style_sheet = f"""
+QTextBrowser {{
+    background-color: transparent; 
+    border: 1px solid gray;
+}}
+
+{vertical_scrollBar_style_sheet}
+"""
+        self.setStyleSheet(style_sheet)
+
+
 class MessageWidget(QFrame):
     delete_requested = Signal(object, object)
 
-    def __init__(self, message_id, avatar_path, sender, message_content, markdown_rendering, reasoning = None, tool_calls = None):
+    def __init__(
+            self,
+            message_id,
+            avatar_path,
+            sender,
+            message_content,
+            markdown_rendering,
+            reasoning = None,
+            tool_calls = None
+    ):
         super().__init__()
 
         self.font_family = load_font()
@@ -231,18 +282,28 @@ class MessageWidget(QFrame):
 
         main_layout.addWidget(header_container)
 
-        if reasoning is not None:
-            reasoning_display = MessageReasoningWidget()
-            reasoning_display.setPlainText(reasoning)
-            main_layout.addWidget(reasoning_display)
+        if sender in tools_mapping:
+            tool_content_display = ToolMessageWidget()
+            tool_content_display.setPlainText(message_content)
+            main_layout.addWidget(tool_content_display)
+        else:
+            if reasoning is not None:
+                reasoning_display = MessageReasoningWidget()
+                reasoning_display.setPlainText(reasoning)
+                main_layout.addWidget(reasoning_display)
 
-        content_display = MessageContentWidget()
-        # 暂时放弃markdown渲染
-        if markdown_rendering == True:
-            content_display.setPlainText(message_content)
-        elif markdown_rendering == False:
-            content_display.setPlainText(message_content)
-        main_layout.addWidget(content_display)
+            content_display = MessageContentWidget()
+            # 暂时放弃markdown渲染
+            if markdown_rendering == True:
+                content_display.setPlainText(message_content)
+            elif markdown_rendering == False:
+                content_display.setPlainText(message_content)
+            main_layout.addWidget(content_display)
+
+            if tool_calls is not None:
+                tools_calls_display = MessageToolsCallWidget()
+                tools_calls_display.setPlainText(str(tool_calls))
+                main_layout.addWidget(tools_calls_display)
 
         self.setLayout(main_layout)
 
@@ -333,8 +394,8 @@ QPlainTextEdit {{
         self.id_to_index_mapping[message_uid] = message_index
         # print(self.id_to_index_mapping)
 
-    def insert_message(self, message_id, avatar_path, sender, message_content, markdown_rendering, reasoning):
-        message_widget = MessageWidget(message_id, avatar_path, sender, message_content, markdown_rendering, reasoning)
+    def insert_message(self, message_id, avatar_path, sender, message_content, markdown_rendering, reasoning, tool_calls):
+        message_widget = MessageWidget(message_id, avatar_path, sender, message_content, markdown_rendering, reasoning, tool_calls)
         message_widget.delete_requested.connect(self.delete_message)
 
         self.messages_layout.insertWidget(self.messages_layout.count() - 1, message_widget, 0, Qt.AlignTop)
@@ -363,23 +424,21 @@ QPlainTextEdit {{
         user_message_index = len(self.agent_worker.main_agent.messages)
         self.on_get_message_id(user_message_id, user_message_index)
 
-        self.insert_message(user_message_id, "./assets/images/user.png", "用户", raw, False, None)
+        self.insert_message(user_message_id, "./assets/images/user.png", "用户", raw, False, None, None)
 
         self.input_text.clear()
 
         self.agent_worker.start_work.emit(raw)
 
     def on_get_assistant_message_dict(self, message_id, message_dict):
-        if message_dict.get("tool_calls") is not None:
-            display = f"{message_dict.get('content')}\n{message_dict.get('tool_calls')}"
-        else:
-            display = f"{message_dict.get('content')}"
         reasoning = message_dict.get("reasoning")
+        content = message_dict.get('content')
+        tool_calls = message_dict.get('tool_calls')
         # print(message_dict)
-        self.insert_message(message_id, self.model_avatar_path, self.model_name, display, True, reasoning)
+        self.insert_message(message_id, self.model_avatar_path, self.model_name, content, True, reasoning, tool_calls)
 
     def on_get_tool_result(self, message_id, tool_name, tool_content):
-        self.insert_message(message_id, "./assets/images/tool.jpg", tool_name, tool_content, False, None)
+        self.insert_message(message_id, "./assets/images/tool.jpg", tool_name, tool_content, False, None, None)
 
     def on_finished(self):
         self.send_button.setEnabled(True)
