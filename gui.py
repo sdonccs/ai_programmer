@@ -213,7 +213,6 @@ class MessageWidget(QFrame):
             avatar_path,
             sender,
             message_content,
-            markdown_rendering,
             reasoning = None,
             tool_calls = None
     ):
@@ -231,6 +230,7 @@ class MessageWidget(QFrame):
         main_layout.setSpacing(5)
 
         header_container = QWidget()
+        header_container.setFixedHeight(32)
         header_layout = QHBoxLayout(header_container)
         header_layout.setContentsMargins(0, 0, 0, 0)
         header_layout.setSpacing(5)
@@ -292,13 +292,10 @@ class MessageWidget(QFrame):
                 reasoning_display.setPlainText(reasoning)
                 main_layout.addWidget(reasoning_display)
 
-            content_display = MessageContentWidget()
-            # 暂时放弃markdown渲染
-            if markdown_rendering == True:
+            if message_content != "":
+                content_display = MessageContentWidget()
                 content_display.setPlainText(message_content)
-            elif markdown_rendering == False:
-                content_display.setPlainText(message_content)
-            main_layout.addWidget(content_display)
+                main_layout.addWidget(content_display)
 
             if tool_calls is not None:
                 tools_calls_display = MessageToolsCallWidget()
@@ -394,8 +391,8 @@ QPlainTextEdit {{
         self.id_to_index_mapping[message_uid] = message_index
         # print(self.id_to_index_mapping)
 
-    def insert_message(self, message_id, avatar_path, sender, message_content, markdown_rendering, reasoning, tool_calls):
-        message_widget = MessageWidget(message_id, avatar_path, sender, message_content, markdown_rendering, reasoning, tool_calls)
+    def insert_message(self, message_id, avatar_path, sender, message_content, reasoning, tool_calls):
+        message_widget = MessageWidget(message_id, avatar_path, sender, message_content, reasoning, tool_calls)
         message_widget.delete_requested.connect(self.delete_message)
 
         self.messages_layout.insertWidget(self.messages_layout.count() - 1, message_widget, 0, Qt.AlignTop)
@@ -424,7 +421,7 @@ QPlainTextEdit {{
         user_message_index = len(self.agent_worker.main_agent.messages)
         self.on_get_message_id(user_message_id, user_message_index)
 
-        self.insert_message(user_message_id, "./assets/images/user.png", "用户", raw, False, None, None)
+        self.insert_message(user_message_id, "./assets/images/user.png", "用户", raw, None, None)
 
         self.input_text.clear()
 
@@ -435,10 +432,10 @@ QPlainTextEdit {{
         content = message_dict.get('content')
         tool_calls = message_dict.get('tool_calls')
         # print(message_dict)
-        self.insert_message(message_id, self.model_avatar_path, self.model_name, content, True, reasoning, tool_calls)
+        self.insert_message(message_id, self.model_avatar_path, self.model_name, content, reasoning, tool_calls)
 
     def on_get_tool_result(self, message_id, tool_name, tool_content):
-        self.insert_message(message_id, "./assets/images/tool.jpg", tool_name, tool_content, False, None, None)
+        self.insert_message(message_id, "./assets/images/tool.jpg", tool_name, tool_content, None, None)
 
     def on_finished(self):
         self.send_button.setEnabled(True)
