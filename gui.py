@@ -141,67 +141,214 @@ QTextBrowser {
         self.setFixedHeight(int(new_size.height()))
 
 
-class MessageReasoningWidget(QTextBrowser):
+class MessageReasoningWidget(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.font_family = load_font()
-
-        self.setFixedHeight(100)
-        font = QFont(self.font_family)
+        font_family = load_font()
+        font = QFont(font_family)
         font.setPixelSize(14)
-        self.setFont(font)
-        style_sheet = f"""
+
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        self.toggle_button_style_sheet = """
+QPushButton {
+    border: 1px solid #d9d9d9;
+    background-color: transparent;
+    text-align: left;
+    padding: 10px
+}
+"""
+        self.expanded_toggle_button_style_sheet = """
+QPushButton {
+    border-top: 1px solid #d9d9d9;
+    border-right: 1px solid #d9d9d9;
+    border-bottom: none;
+    border-left: 1px solid #d9d9d9;
+    background-color: transparent;
+    text-align: left;
+    padding: 10px
+}
+"""
+        self.toggle_button = QPushButton("▼ 思考内容")
+        self.toggle_button.setFont(font)
+        self.toggle_button.setFixedHeight(38)
+        self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
+        self.toggle_button.clicked.connect(self.toggle_content)
+        main_layout.addWidget(self.toggle_button)
+
+        self.content_widget = QTextBrowser()
+        self.content_widget.setFont(font)
+        self.content_widget.setFixedHeight(100)
+        content_widget_style_sheet = f"""
 QTextBrowser {{
     background-color: transparent; 
-    border: 1px solid gray;
+    border: 1px solid #d9d9d9;
 }}
 
 {vertical_scrollBar_style_sheet}
 """
-        self.setStyleSheet(style_sheet)
+        self.content_widget.setStyleSheet(content_widget_style_sheet)
+
+        self.content_widget.hide()
+        self.is_expanded = False
+        main_layout.addWidget(self.content_widget)
+
+        self.setLayout(main_layout)
+
+    def toggle_content(self):
+        if self.is_expanded:
+            self.content_widget.hide()
+            self.toggle_button.setText("▼ 思考内容")
+            self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
+            self.is_expanded = False
+        else:
+            self.content_widget.show()
+            self.toggle_button.setText("▲ 思考内容")
+            self.toggle_button.setStyleSheet(self.expanded_toggle_button_style_sheet)
+            self.is_expanded = True
 
 
-class MessageToolsCallWidget(QTextBrowser):
+class MessageToolsCallWidget(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.font_family = load_font()
-
-        self.setFixedHeight(50)
-        font = QFont(self.font_family)
+        font_family = load_font()
+        font = QFont(font_family)
         font.setPixelSize(14)
-        self.setFont(font)
-        style_sheet = f"""
-QTextBrowser {{
-    background-color: transparent; 
-    border: 1px solid gray;
-}}
 
-{vertical_scrollBar_style_sheet}
-"""
-        self.setStyleSheet(style_sheet)
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        self.toggle_button_style_sheet = """
+    QPushButton {
+        border: 1px solid #d9d9d9;
+        background-color: transparent;
+        text-align: left;
+        padding: 10px
+    }
+    """
+        self.expanded_toggle_button_style_sheet = """
+    QPushButton {
+        border-top: 1px solid #d9d9d9;
+        border-right: 1px solid #d9d9d9;
+        border-bottom: none;
+        border-left: 1px solid #d9d9d9;
+        background-color: transparent;
+        text-align: left;
+        padding: 10px
+    }
+    """
+        self.toggle_button = QPushButton("▼ 工具调用")
+        self.toggle_button.setFont(font)
+        self.toggle_button.setFixedHeight(38)
+        self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
+        self.toggle_button.clicked.connect(self.toggle_content)
+        main_layout.addWidget(self.toggle_button)
+
+        self.content_widget = QTextBrowser()
+        self.content_widget.setFont(font)
+        self.content_widget.setFixedHeight(100)
+        content_widget_style_sheet = f"""
+    QTextBrowser {{
+        background-color: transparent; 
+        border: 1px solid #d9d9d9;
+    }}
+
+    {vertical_scrollBar_style_sheet}
+    """
+        self.content_widget.setStyleSheet(content_widget_style_sheet)
+
+        self.content_widget.hide()
+        self.is_expanded = False
+        main_layout.addWidget(self.content_widget)
+
+        self.setLayout(main_layout)
+
+    def toggle_content(self):
+        if self.is_expanded:
+            self.content_widget.hide()
+            self.toggle_button.setText("▼ 工具调用")
+            self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
+            self.is_expanded = False
+        else:
+            self.content_widget.show()
+            self.toggle_button.setText("▲ 工具调用")
+            self.toggle_button.setStyleSheet(self.expanded_toggle_button_style_sheet)
+            self.is_expanded = True
 
 
-class ToolMessageWidget(QTextBrowser):
+class ToolMessageWidget(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.font_family = load_font()
-
-        self.setFixedHeight(100)
-        font = QFont(self.font_family)
+        font_family = load_font()
+        font = QFont(font_family)
         font.setPixelSize(14)
-        self.setFont(font)
-        style_sheet = f"""
-QTextBrowser {{
-    background-color: transparent; 
-    border: 1px solid gray;
-}}
 
-{vertical_scrollBar_style_sheet}
-"""
-        self.setStyleSheet(style_sheet)
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        self.toggle_button_style_sheet = """
+    QPushButton {
+        border: 1px solid #d9d9d9;
+        background-color: transparent;
+        text-align: left;
+        padding: 10px
+    }
+    """
+        self.expanded_toggle_button_style_sheet = """
+    QPushButton {
+        border-top: 1px solid #d9d9d9;
+        border-right: 1px solid #d9d9d9;
+        border-bottom: none;
+        border-left: 1px solid #d9d9d9;
+        background-color: transparent;
+        text-align: left;
+        padding: 10px
+    }
+    """
+        self.toggle_button = QPushButton("▼ 工具返回")
+        self.toggle_button.setFont(font)
+        self.toggle_button.setFixedHeight(38)
+        self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
+        self.toggle_button.clicked.connect(self.toggle_content)
+        main_layout.addWidget(self.toggle_button)
+
+        self.content_widget = QTextBrowser()
+        self.content_widget.setFont(font)
+        self.content_widget.setFixedHeight(100)
+        content_widget_style_sheet = f"""
+    QTextBrowser {{
+        background-color: transparent; 
+        border: 1px solid #d9d9d9;
+    }}
+
+    {vertical_scrollBar_style_sheet}
+    """
+        self.content_widget.setStyleSheet(content_widget_style_sheet)
+
+        self.content_widget.hide()
+        self.is_expanded = False
+        main_layout.addWidget(self.content_widget)
+
+        self.setLayout(main_layout)
+
+    def toggle_content(self):
+        if self.is_expanded:
+            self.content_widget.hide()
+            self.toggle_button.setText("▼ 工具返回")
+            self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
+            self.is_expanded = False
+        else:
+            self.content_widget.show()
+            self.toggle_button.setText("▲ 工具返回")
+            self.toggle_button.setStyleSheet(self.expanded_toggle_button_style_sheet)
+            self.is_expanded = True
 
 
 class MessageWidget(QFrame):
@@ -284,12 +431,12 @@ class MessageWidget(QFrame):
 
         if sender in tools_mapping:
             tool_content_display = ToolMessageWidget()
-            tool_content_display.setPlainText(message_content)
+            tool_content_display.content_widget.setPlainText(message_content)
             main_layout.addWidget(tool_content_display)
         else:
             if reasoning is not None:
                 reasoning_display = MessageReasoningWidget()
-                reasoning_display.setPlainText(reasoning)
+                reasoning_display.content_widget.setPlainText(reasoning)
                 main_layout.addWidget(reasoning_display)
 
             if message_content != "":
@@ -299,7 +446,7 @@ class MessageWidget(QFrame):
 
             if tool_calls is not None:
                 tools_calls_display = MessageToolsCallWidget()
-                tools_calls_display.setPlainText(str(tool_calls))
+                tools_calls_display.content_widget.setPlainText(str(tool_calls))
                 main_layout.addWidget(tools_calls_display)
 
         self.setLayout(main_layout)
