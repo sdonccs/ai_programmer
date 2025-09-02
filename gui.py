@@ -438,19 +438,21 @@ class MessageWidget(QFrame):
 
         header_layout.addWidget(info_container)
 
+        header_layout.addStretch()
+
         delete_button = QPushButton("✕")
         delete_button.setFixedSize(26, 26)
         delete_button.setStyleSheet("""
-        QPushButton {
-            border: none;
-            background-color: transparent;
-            color: #CCCCCC
-        }
-        QPushButton:hover {
-            background-color: #FFE6E6;
-            color: #FF0000;
-        }
-        """)
+QPushButton {
+    border: none;
+    background-color: transparent;
+    color: #CCCCCC
+}
+QPushButton:hover {
+    background-color: #FFE6E6;
+    color: #FF0000;
+}
+""")
         delete_button.clicked.connect(lambda: self.delete_requested.emit(self.message_id, self))
         header_layout.addWidget(delete_button)
 
