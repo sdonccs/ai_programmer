@@ -153,9 +153,13 @@ class MessageReasoningWidget(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
+        self.toggle_button = QPushButton("▼ 思考内容")
+        self.toggle_button.setFont(font)
+        self.toggle_button.setFixedHeight(38)
         self.toggle_button_style_sheet = """
 QPushButton {
     border: 1px solid #d9d9d9;
+    border-radius: 8px;
     background-color: transparent;
     text-align: left;
     padding: 10px
@@ -167,14 +171,15 @@ QPushButton {
     border-right: 1px solid #d9d9d9;
     border-bottom: none;
     border-left: 1px solid #d9d9d9;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
     background-color: transparent;
     text-align: left;
     padding: 10px
 }
 """
-        self.toggle_button = QPushButton("▼ 思考内容")
-        self.toggle_button.setFont(font)
-        self.toggle_button.setFixedHeight(38)
         self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
         self.toggle_button.clicked.connect(self.toggle_content)
         main_layout.addWidget(self.toggle_button)
@@ -186,6 +191,10 @@ QPushButton {
 QTextBrowser {{
     background-color: transparent; 
     border: 1px solid #d9d9d9;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 8px;
+    border-bottom-left-radius: 8px;
 }}
 
 {vertical_scrollBar_style_sheet}
@@ -223,28 +232,33 @@ class MessageToolsCallWidget(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        self.toggle_button_style_sheet = """
-    QPushButton {
-        border: 1px solid #d9d9d9;
-        background-color: transparent;
-        text-align: left;
-        padding: 10px
-    }
-    """
-        self.expanded_toggle_button_style_sheet = """
-    QPushButton {
-        border-top: 1px solid #d9d9d9;
-        border-right: 1px solid #d9d9d9;
-        border-bottom: none;
-        border-left: 1px solid #d9d9d9;
-        background-color: transparent;
-        text-align: left;
-        padding: 10px
-    }
-    """
         self.toggle_button = QPushButton("▼ 工具调用")
         self.toggle_button.setFont(font)
         self.toggle_button.setFixedHeight(38)
+        self.toggle_button_style_sheet = """
+QPushButton {
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    background-color: transparent;
+    text-align: left;
+    padding: 10px
+}
+"""
+        self.expanded_toggle_button_style_sheet = """
+QPushButton {
+    border-top: 1px solid #d9d9d9;
+    border-right: 1px solid #d9d9d9;
+    border-bottom: none;
+    border-left: 1px solid #d9d9d9;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+    background-color: transparent;
+    text-align: left;
+    padding: 10px
+}
+"""
         self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
         self.toggle_button.clicked.connect(self.toggle_content)
         main_layout.addWidget(self.toggle_button)
@@ -253,13 +267,17 @@ class MessageToolsCallWidget(QWidget):
         self.content_widget.setFont(font)
         self.content_widget.setFixedHeight(100)
         content_widget_style_sheet = f"""
-    QTextBrowser {{
-        background-color: transparent; 
-        border: 1px solid #d9d9d9;
-    }}
+QTextBrowser {{
+    background-color: transparent; 
+    border: 1px solid #d9d9d9;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+}}
 
-    {vertical_scrollBar_style_sheet}
-    """
+{vertical_scrollBar_style_sheet}
+"""
         self.content_widget.setStyleSheet(content_widget_style_sheet)
 
         self.content_widget.hide()
@@ -293,28 +311,33 @@ class ToolMessageWidget(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        self.toggle_button_style_sheet = """
-    QPushButton {
-        border: 1px solid #d9d9d9;
-        background-color: transparent;
-        text-align: left;
-        padding: 10px
-    }
-    """
-        self.expanded_toggle_button_style_sheet = """
-    QPushButton {
-        border-top: 1px solid #d9d9d9;
-        border-right: 1px solid #d9d9d9;
-        border-bottom: none;
-        border-left: 1px solid #d9d9d9;
-        background-color: transparent;
-        text-align: left;
-        padding: 10px
-    }
-    """
         self.toggle_button = QPushButton("▼ 工具返回")
         self.toggle_button.setFont(font)
         self.toggle_button.setFixedHeight(38)
+        self.toggle_button_style_sheet = """
+QPushButton {
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    background-color: transparent;
+    text-align: left;
+    padding: 10px
+}
+"""
+        self.expanded_toggle_button_style_sheet = """
+QPushButton {
+    border-top: 1px solid #d9d9d9;
+    border-right: 1px solid #d9d9d9;
+    border-bottom: none;
+    border-left: 1px solid #d9d9d9;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+    background-color: transparent;
+    text-align: left;
+    padding: 10px
+}
+"""
         self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
         self.toggle_button.clicked.connect(self.toggle_content)
         main_layout.addWidget(self.toggle_button)
@@ -323,13 +346,17 @@ class ToolMessageWidget(QWidget):
         self.content_widget.setFont(font)
         self.content_widget.setFixedHeight(100)
         content_widget_style_sheet = f"""
-    QTextBrowser {{
-        background-color: transparent; 
-        border: 1px solid #d9d9d9;
-    }}
+QTextBrowser {{
+    background-color: transparent; 
+    border: 1px solid #d9d9d9;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+}}
 
-    {vertical_scrollBar_style_sheet}
-    """
+{vertical_scrollBar_style_sheet}
+"""
         self.content_widget.setStyleSheet(content_widget_style_sheet)
 
         self.content_widget.hide()
