@@ -609,7 +609,7 @@ QPlainTextEdit {{
         self.insert_message(message_id, self.model_avatar_path, self.model_name, content, reasoning, tool_calls)
 
     def on_get_tool_result(self, message_id, tool_name, tool_content):
-        self.insert_message(message_id, "./assets/images/tool.jpg", tool_name, tool_content, None, None)
+        self.insert_message(message_id, "./assets/images/tool.png", tool_name, tool_content, None, None)
 
     def on_finished(self):
         self.send_button.setEnabled(True)
