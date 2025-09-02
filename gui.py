@@ -2,11 +2,11 @@ import json
 import uuid
 from datetime import datetime
 
-from PySide6.QtCore import Qt, QObject, QThread, Signal
+from PySide6.QtCore import Qt, QObject, QThread, Signal, QSize
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPlainTextEdit, QPushButton, QFrame, QLabel, QScrollArea, QTextBrowser
 )
-from PySide6.QtGui import QFont, QShortcut, QFontDatabase, QPixmap
+from PySide6.QtGui import QFont, QShortcut, QFontDatabase, QPixmap, QIcon
 
 from helpers.agent import Agent
 from helpers.model_api_client import openrouter_client, openrouter_model_names
@@ -153,16 +153,19 @@ class MessageReasoningWidget(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        self.toggle_button = QPushButton("▼ 思考内容")
+        self.toggle_button = QPushButton("思考内容")
+        self.toggle_button.setLayoutDirection(Qt.RightToLeft)
+        self.toggle_button.setIcon(QIcon("./assets/images/expand.svg"))
+        self.toggle_button.setIconSize(QSize(24, 24))
         self.toggle_button.setFont(font)
-        self.toggle_button.setFixedHeight(38)
+        self.toggle_button.setFixedHeight(28)
         self.toggle_button_style_sheet = """
 QPushButton {
     border: 1px solid #d9d9d9;
     border-radius: 8px;
     background-color: transparent;
     text-align: left;
-    padding: 10px
+    padding: 6px
 }
 """
         self.expanded_toggle_button_style_sheet = """
@@ -177,7 +180,7 @@ QPushButton {
     border-bottom-left-radius: 0;
     background-color: transparent;
     text-align: left;
-    padding: 10px
+    padding: 6px
 }
 """
         self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
@@ -210,12 +213,16 @@ QTextBrowser {{
     def toggle_content(self):
         if self.is_expanded:
             self.content_widget.hide()
-            self.toggle_button.setText("▼ 思考内容")
+            self.toggle_button.setText("思考内容")
+            self.toggle_button.setIcon(QIcon("./assets/images/expand.svg"))
+            self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
             self.is_expanded = False
         else:
             self.content_widget.show()
-            self.toggle_button.setText("▲ 思考内容")
+            self.toggle_button.setText("思考内容")
+            self.toggle_button.setIcon(QIcon("./assets/images/expanded.svg"))
+            self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.expanded_toggle_button_style_sheet)
             self.is_expanded = True
 
@@ -232,16 +239,19 @@ class MessageToolsCallWidget(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        self.toggle_button = QPushButton("▼ 工具调用")
+        self.toggle_button = QPushButton("工具调用")
+        self.toggle_button.setLayoutDirection(Qt.RightToLeft)
+        self.toggle_button.setIcon(QIcon("./assets/images/expand.svg"))
+        self.toggle_button.setIconSize(QSize(24, 24))
         self.toggle_button.setFont(font)
-        self.toggle_button.setFixedHeight(38)
+        self.toggle_button.setFixedHeight(28)
         self.toggle_button_style_sheet = """
 QPushButton {
     border: 1px solid #d9d9d9;
     border-radius: 8px;
     background-color: transparent;
     text-align: left;
-    padding: 10px
+    padding: 6px
 }
 """
         self.expanded_toggle_button_style_sheet = """
@@ -256,7 +266,7 @@ QPushButton {
     border-bottom-left-radius: 0;
     background-color: transparent;
     text-align: left;
-    padding: 10px
+    padding: 6px
 }
 """
         self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
@@ -289,12 +299,16 @@ QTextBrowser {{
     def toggle_content(self):
         if self.is_expanded:
             self.content_widget.hide()
-            self.toggle_button.setText("▼ 工具调用")
+            self.toggle_button.setText("工具调用")
+            self.toggle_button.setIcon(QIcon("./assets/images/expand.svg"))
+            self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
             self.is_expanded = False
         else:
             self.content_widget.show()
-            self.toggle_button.setText("▲ 工具调用")
+            self.toggle_button.setText("工具调用")
+            self.toggle_button.setIcon(QIcon("./assets/images/expanded.svg"))
+            self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.expanded_toggle_button_style_sheet)
             self.is_expanded = True
 
@@ -311,16 +325,19 @@ class ToolMessageWidget(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        self.toggle_button = QPushButton("▼ 工具返回")
+        self.toggle_button = QPushButton("工具返回")
+        self.toggle_button.setLayoutDirection(Qt.RightToLeft)
+        self.toggle_button.setIcon(QIcon("./assets/images/expand.svg"))
+        self.toggle_button.setIconSize(QSize(24, 24))
         self.toggle_button.setFont(font)
-        self.toggle_button.setFixedHeight(38)
+        self.toggle_button.setFixedHeight(28)
         self.toggle_button_style_sheet = """
 QPushButton {
     border: 1px solid #d9d9d9;
     border-radius: 8px;
     background-color: transparent;
     text-align: left;
-    padding: 10px
+    padding: 6px
 }
 """
         self.expanded_toggle_button_style_sheet = """
@@ -335,7 +352,7 @@ QPushButton {
     border-bottom-left-radius: 0;
     background-color: transparent;
     text-align: left;
-    padding: 10px
+    padding: 6px
 }
 """
         self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
@@ -368,12 +385,16 @@ QTextBrowser {{
     def toggle_content(self):
         if self.is_expanded:
             self.content_widget.hide()
-            self.toggle_button.setText("▼ 工具返回")
+            self.toggle_button.setText("工具返回")
+            self.toggle_button.setIcon(QIcon("./assets/images/expand.svg"))
+            self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
             self.is_expanded = False
         else:
             self.content_widget.show()
-            self.toggle_button.setText("▲ 工具返回")
+            self.toggle_button.setText("工具返回")
+            self.toggle_button.setIcon(QIcon("./assets/images/expanded.svg"))
+            self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.expanded_toggle_button_style_sheet)
             self.is_expanded = True
 
