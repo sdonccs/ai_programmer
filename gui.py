@@ -65,8 +65,8 @@ class AgentWorker(QObject):
         system_prompt=get_prompt(
             prompt_name="main_system",
             variables={
-                "root_dir_path": "C:/alocation/projects/cherry-studio",
-                "cwd_path": "C:/alocation/projects/cherry-studio"
+                "root_dir_path": "C:/alocation/projects/ttt_projects/ai_programmer",
+                "cwd_path": "C:/alocation/projects/ttt_projects/ai_programmer"
             }
         ),
         tools=tools_list
