@@ -7,7 +7,7 @@ from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPlainTextEdit, QPushButton, QFrame, QLabel, QScrollArea, QTextBrowser
 )
-from PySide6.QtGui import QFont, QShortcut, QFontDatabase, QIcon
+from PySide6.QtGui import QFont, QShortcut, QFontDatabase, QIcon, QInputMethodEvent
 
 from helpers.agent import Agent
 from helpers.model_api_client import openrouter_client, openrouter_model_names
@@ -17,15 +17,15 @@ from tools.tools_list import tools_list, tools_mapping
 
 vertical_scrollBar_style_sheet = """
 QScrollBar:vertical {
-    background-color: #FFFFFF;
+    background-color: transparent;
     width: 10px;
     margin: 0px;
 }
 QScrollBar::track:vertical {
-    background-color: #FFFFFF;
+    background-color: transparent;
 }
 QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-    background-color: #FFFFFF;
+    background-color: transparent;
 }
 QScrollBar::handle:vertical {
     background-color: #E6E6E6;
@@ -62,6 +62,51 @@ def load_font():
     # print(f"  可用样式: {styles}")
 
 
+class CustomPlainTextEdit(QPlainTextEdit):
+    """自定义输入框，解决拼音输入法时占位符不消失的问题"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._has_preedit = False
+        self._original_placeholder = ""
+    
+    def setPlaceholderText(self, text):
+        """重写设置占位符文本的方法"""
+        self._original_placeholder = text
+        super().setPlaceholderText(text)
+    
+    def inputMethodEvent(self, event: QInputMethodEvent):
+        """处理输入法事件"""
+        # 获取预编辑文本
+        preedit_string = event.preeditString()
+        
+        # 如果有预编辑文本，隐藏占位符
+        if preedit_string:
+            if not self._has_preedit:
+                self._has_preedit = True
+                super().setPlaceholderText("")  # 隐藏占位符
+        else:
+            # 如果没有预编辑文本且输入框为空，显示占位符
+            if self._has_preedit:
+                self._has_preedit = False
+                if self.toPlainText() == "":
+                    super().setPlaceholderText(self._original_placeholder)
+        
+        # 调用父类方法处理输入法事件
+        super().inputMethodEvent(event)
+    
+    def keyPressEvent(self, event):
+        """处理键盘事件"""
+        super().keyPressEvent(event)
+        
+        # 如果没有预编辑文本，根据文本内容决定是否显示占位符
+        if not self._has_preedit:
+            if self.toPlainText() == "":
+                super().setPlaceholderText(self._original_placeholder)
+            else:
+                super().setPlaceholderText("")
+
+
 class AgentWorker(QObject):
     get_assistant_message_dict = Signal(object, dict)
     get_tool_result = Signal(object, str, str)
@@ -72,12 +117,12 @@ class AgentWorker(QObject):
     main_agent = Agent(
         agent_name="main_agent",
         client=openrouter_client,
-        model_name=openrouter_model_names["moonshotai"][0],
+        model_name=openrouter_model_names["anthropic"][0],
         system_prompt=get_prompt(
             prompt_name="main_system",
             variables={
-                "root_dir_path": "C:/alocation/projects/ttt_projects/ai_programmer",
-                "cwd_path": "C:/alocation/projects/ttt_projects/ai_programmer"
+                "root_dir_path": "C:/alocation/projects/ai_programmer",
+                "cwd_path": "C:/alocation/projects/ai_programmer"
             }
         ),
         tools=tools_list
@@ -549,7 +594,7 @@ QWidget {
 
         input_layout = QHBoxLayout()
 
-        self.input_text = QPlainTextEdit()
+        self.input_text = CustomPlainTextEdit()
         self.input_text.setFixedHeight(100)
         self.input_text.setPlaceholderText("在这里输入内容，按Ctrl+Enter发送")
         input_text_style_sheet = f"""
