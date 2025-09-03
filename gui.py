@@ -429,23 +429,23 @@ class MessageWidget(QFrame):
         self.setStyleSheet("QFrame { background-color: white; }")
 
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(2, 2, 2, 2)
+        main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(5)
 
         header_container = QWidget()
-        header_container.setFixedHeight(32)
+        header_container.setFixedHeight(38)
         header_layout = QHBoxLayout(header_container)
         header_layout.setContentsMargins(0, 0, 0, 0)
         header_layout.setSpacing(5)
 
         avatar_svg = QSvgWidget(avatar_path)
-        avatar_svg.setFixedSize(32, 32)
+        avatar_svg.setFixedSize(35, 35)
         header_layout.addWidget(avatar_svg)
 
         info_container = QWidget()
         info_layout = QVBoxLayout(info_container)
         info_layout.setContentsMargins(0, 0, 0, 0)
-        info_layout.setSpacing(4)
+        info_layout.setSpacing(0)
 
         sender_name = QLabel()
         font = QFont(font_family_name)
@@ -454,6 +454,8 @@ class MessageWidget(QFrame):
         sender_name.setFont(font)
         sender_name.setText(sender)
         info_layout.addWidget(sender_name)
+
+        info_layout.addStretch()
 
         time_info = QLabel()
         font = QFont(font_family_name)
@@ -529,8 +531,8 @@ QScrollArea {{
         self.messages_display = QWidget()
         self.messages_display.setStyleSheet("background-color: #FFFFFF")
         self.messages_layout = QVBoxLayout(self.messages_display)
-        self.messages_layout.setContentsMargins(0, 0, 0, 0)
-        self.messages_layout.setSpacing(0)
+        self.messages_layout.setContentsMargins(5, 5, 5, 5)
+        self.messages_layout.setSpacing(8)
         self.messages_layout.addStretch()
         self.scroll_area.setWidget(self.messages_display)
 
