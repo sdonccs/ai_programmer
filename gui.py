@@ -3,10 +3,11 @@ import uuid
 from datetime import datetime
 
 from PySide6.QtCore import Qt, QObject, QThread, Signal, QSize
+from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPlainTextEdit, QPushButton, QFrame, QLabel, QScrollArea, QTextBrowser
 )
-from PySide6.QtGui import QFont, QShortcut, QFontDatabase, QPixmap, QIcon
+from PySide6.QtGui import QFont, QShortcut, QFontDatabase, QIcon
 
 from helpers.agent import Agent
 from helpers.model_api_client import openrouter_client, openrouter_model_names
@@ -45,10 +46,20 @@ QScrollBar::sub-line:vertical {
 """
 
 
+font_family_name = "Microsoft YaHei"
+
 def load_font():
-    font_id = QFontDatabase.addApplicationFont('./assets/fonts/TwemojiCountryFlags.ttf')
-    font_families = QFontDatabase.applicationFontFamilies(font_id)
-    return font_families[0]
+    font_files = [
+        "./assets/fonts/msyhl.ttc",  # 微软雅黑 Light
+        "./assets/fonts/msyh.ttc",  # 微软雅黑 Regular
+        "./assets/fonts/msyhbd.ttc"  # 微软雅黑 Bold
+    ]
+
+    for font_file in font_files:
+        QFontDatabase.addApplicationFont(font_file)
+
+    # styles = QFontDatabase.styles(font_family_name)
+    # print(f"  可用样式: {styles}")
 
 
 class AgentWorker(QObject):
@@ -61,7 +72,7 @@ class AgentWorker(QObject):
     main_agent = Agent(
         agent_name="main_agent",
         client=openrouter_client,
-        model_name=openrouter_model_names["anthropic"][0],
+        model_name=openrouter_model_names["moonshotai"][0],
         system_prompt=get_prompt(
             prompt_name="main_system",
             variables={
@@ -120,12 +131,11 @@ class MessageContentWidget(QTextBrowser):
     def __init__(self):
         super().__init__()
 
-        self.font_family = load_font()
-
         self.document().documentLayout().documentSizeChanged.connect(self.on_document_size_changed)
 
-        font = QFont(self.font_family)
+        font = QFont(font_family_name)
         font.setPixelSize(14)
+        font.setWeight(QFont.Weight.Normal)
         self.setFont(font)
         style_sheet = """
 QTextBrowser {
@@ -145,9 +155,9 @@ class MessageReasoningWidget(QWidget):
     def __init__(self):
         super().__init__()
 
-        font_family = load_font()
-        font = QFont(font_family)
+        font = QFont(font_family_name)
         font.setPixelSize(14)
+        font.setWeight(QFont.Weight.Normal)
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -155,7 +165,7 @@ class MessageReasoningWidget(QWidget):
 
         self.toggle_button = QPushButton("思考内容")
         self.toggle_button.setLayoutDirection(Qt.RightToLeft)
-        self.toggle_button.setIcon(QIcon("./assets/images/expand.svg"))
+        self.toggle_button.setIcon(QIcon("./assets/images/icon/expand.svg"))
         self.toggle_button.setIconSize(QSize(24, 24))
         self.toggle_button.setFont(font)
         self.toggle_button.setFixedHeight(28)
@@ -214,14 +224,14 @@ QTextBrowser {{
         if self.is_expanded:
             self.content_widget.hide()
             self.toggle_button.setText("思考内容")
-            self.toggle_button.setIcon(QIcon("./assets/images/expand.svg"))
+            self.toggle_button.setIcon(QIcon("./assets/images/icon/expand.svg"))
             self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
             self.is_expanded = False
         else:
             self.content_widget.show()
             self.toggle_button.setText("思考内容")
-            self.toggle_button.setIcon(QIcon("./assets/images/expanded.svg"))
+            self.toggle_button.setIcon(QIcon("./assets/images/icon/expanded.svg"))
             self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.expanded_toggle_button_style_sheet)
             self.is_expanded = True
@@ -231,9 +241,9 @@ class MessageToolsCallWidget(QWidget):
     def __init__(self):
         super().__init__()
 
-        font_family = load_font()
-        font = QFont(font_family)
+        font = QFont(font_family_name)
         font.setPixelSize(14)
+        font.setWeight(QFont.Weight.Normal)
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -241,7 +251,7 @@ class MessageToolsCallWidget(QWidget):
 
         self.toggle_button = QPushButton("工具调用")
         self.toggle_button.setLayoutDirection(Qt.RightToLeft)
-        self.toggle_button.setIcon(QIcon("./assets/images/expand.svg"))
+        self.toggle_button.setIcon(QIcon("./assets/images/icon/expand.svg"))
         self.toggle_button.setIconSize(QSize(24, 24))
         self.toggle_button.setFont(font)
         self.toggle_button.setFixedHeight(28)
@@ -300,14 +310,14 @@ QTextBrowser {{
         if self.is_expanded:
             self.content_widget.hide()
             self.toggle_button.setText("工具调用")
-            self.toggle_button.setIcon(QIcon("./assets/images/expand.svg"))
+            self.toggle_button.setIcon(QIcon("./assets/images/icon/expand.svg"))
             self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
             self.is_expanded = False
         else:
             self.content_widget.show()
             self.toggle_button.setText("工具调用")
-            self.toggle_button.setIcon(QIcon("./assets/images/expanded.svg"))
+            self.toggle_button.setIcon(QIcon("./assets/images/icon/expanded.svg"))
             self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.expanded_toggle_button_style_sheet)
             self.is_expanded = True
@@ -317,9 +327,9 @@ class ToolMessageWidget(QWidget):
     def __init__(self):
         super().__init__()
 
-        font_family = load_font()
-        font = QFont(font_family)
+        font = QFont(font_family_name)
         font.setPixelSize(14)
+        font.setWeight(QFont.Weight.Normal)
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -327,7 +337,7 @@ class ToolMessageWidget(QWidget):
 
         self.toggle_button = QPushButton("工具返回")
         self.toggle_button.setLayoutDirection(Qt.RightToLeft)
-        self.toggle_button.setIcon(QIcon("./assets/images/expand.svg"))
+        self.toggle_button.setIcon(QIcon("./assets/images/icon/expand.svg"))
         self.toggle_button.setIconSize(QSize(24, 24))
         self.toggle_button.setFont(font)
         self.toggle_button.setFixedHeight(28)
@@ -386,14 +396,14 @@ QTextBrowser {{
         if self.is_expanded:
             self.content_widget.hide()
             self.toggle_button.setText("工具返回")
-            self.toggle_button.setIcon(QIcon("./assets/images/expand.svg"))
+            self.toggle_button.setIcon(QIcon("./assets/images/icon/expand.svg"))
             self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
             self.is_expanded = False
         else:
             self.content_widget.show()
             self.toggle_button.setText("工具返回")
-            self.toggle_button.setIcon(QIcon("./assets/images/expanded.svg"))
+            self.toggle_button.setIcon(QIcon("./assets/images/icon/expanded.svg"))
             self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.expanded_toggle_button_style_sheet)
             self.is_expanded = True
@@ -413,8 +423,6 @@ class MessageWidget(QFrame):
     ):
         super().__init__()
 
-        self.font_family = load_font()
-
         self.message_id = message_id
 
         self.setFrameStyle(QFrame.NoFrame)
@@ -430,11 +438,9 @@ class MessageWidget(QFrame):
         header_layout.setContentsMargins(0, 0, 0, 0)
         header_layout.setSpacing(5)
 
-        avatar_label = QLabel()
-        avatar_label.setFixedSize(32, 32)
-        pixmap = QPixmap(avatar_path)
-        avatar_label.setPixmap(pixmap.scaled(32, 32, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        header_layout.addWidget(avatar_label)
+        avatar_svg = QSvgWidget(avatar_path)
+        avatar_svg.setFixedSize(32, 32)
+        header_layout.addWidget(avatar_svg)
 
         info_container = QWidget()
         info_layout = QVBoxLayout(info_container)
@@ -442,16 +448,17 @@ class MessageWidget(QFrame):
         info_layout.setSpacing(4)
 
         sender_name = QLabel()
-        font = QFont(self.font_family)
+        font = QFont(font_family_name)
         font.setPixelSize(14)
+        font.setWeight(QFont.Weight.Bold)
         sender_name.setFont(font)
-        sender_name.setStyleSheet("font-weight: bold")
         sender_name.setText(sender)
         info_layout.addWidget(sender_name)
 
         time_info = QLabel()
-        font = QFont(self.font_family)
+        font = QFont(font_family_name)
         font.setPixelSize(10)
+        font.setWeight(QFont.Weight.Normal)
         time_info.setFont(font)
         time_info.setStyleSheet("color: #A0A0A0")
         time_info.setText(datetime.now().strftime("%m/%d %H:%M"))
@@ -506,8 +513,6 @@ class ChatWidget(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.font_family = load_font()
-
         layout = QVBoxLayout()
 
         self.scroll_area = QScrollArea()
@@ -544,14 +549,16 @@ QPlainTextEdit {{
 {vertical_scrollBar_style_sheet}
 """
         self.input_text.setStyleSheet(input_text_style_sheet)
-        font = QFont(self.font_family)
+        font = QFont(font_family_name)
         font.setPixelSize(14)
+        font.setWeight(QFont.Weight.Normal)
         self.input_text.setFont(font)
         input_layout.addWidget(self.input_text)
 
         self.send_button = QPushButton("发送")
-        font = QFont(self.font_family)
+        font = QFont(font_family_name)
         font.setPixelSize(14)
+        font.setWeight(QFont.Weight.Normal)
         self.send_button.setFont(font)
         self.send_button.setFixedSize(50, 100)
         self.send_button.clicked.connect(self.send_message)
@@ -565,14 +572,6 @@ QPlainTextEdit {{
 
         self.thread = QThread()
         self.agent_worker = AgentWorker()
-        self.model_name = self.agent_worker.main_agent.model_name
-        self.model_avatar_path = {
-            "google/gemini-2.5-pro-preview": "./assets/images/models/gemini.png",
-            "anthropic/claude-sonnet-4": "./assets/images/models/claude.png",
-            "anthropic/claude-opus-4": "./assets/images/models/claude.png",
-            "qwen/qwen3-coder": "./assets/images/models/qwen.png",
-            "moonshotai/kimi-k2": "./assets/images/models/kimi.png"
-        }[self.model_name]
 
         self.agent_worker.moveToThread(self.thread)
 
@@ -618,7 +617,7 @@ QPlainTextEdit {{
         user_message_index = len(self.agent_worker.main_agent.messages)
         self.on_get_message_id(user_message_id, user_message_index)
 
-        self.insert_message(user_message_id, "./assets/images/user.png", "用户", raw, None, None)
+        self.insert_message(user_message_id, "./assets/images/avatar/user.svg", "用户", raw, None, None)
 
         self.input_text.clear()
 
@@ -629,10 +628,10 @@ QPlainTextEdit {{
         content = message_dict.get('content')
         tool_calls = message_dict.get('tool_calls')
         # print(message_dict)
-        self.insert_message(message_id, self.model_avatar_path, self.model_name, content, reasoning, tool_calls)
+        self.insert_message(message_id, "./assets/images/avatar/assistant.svg", self.agent_worker.main_agent.model_name, content, reasoning, tool_calls)
 
     def on_get_tool_result(self, message_id, tool_name, tool_content):
-        self.insert_message(message_id, "./assets/images/tool.png", tool_name, tool_content, None, None)
+        self.insert_message(message_id, "./assets/images/avatar/tool.svg", tool_name, tool_content, None, None)
 
     def on_finished(self):
         self.send_button.setEnabled(True)
@@ -646,6 +645,8 @@ QPlainTextEdit {{
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+
+        load_font()
 
         self.setWindowTitle("测试")
         self.setGeometry(500, 150, 600, 800)
