@@ -17,15 +17,15 @@ from tools.tools_list import tools_list, tools_mapping
 
 vertical_scrollBar_style_sheet = """
 QScrollBar:vertical {
-    background-color: transparent;
+    background-color: #FFFFFF;
     width: 10px;
     margin: 0px;
 }
 QScrollBar::track:vertical {
-    background-color: transparent;
+    background-color: #FFFFFF;
 }
 QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-    background-color: transparent;
+    background-color: #FFFFFF;
 }
 QScrollBar::handle:vertical {
     background-color: #E6E6E6;
@@ -139,7 +139,7 @@ class MessageContentWidget(QTextBrowser):
         self.setFont(font)
         style_sheet = """
 QTextBrowser {
-    background-color: transparent; 
+    background-color: #FFFFFF; 
     border: none;
 }
 """
@@ -173,7 +173,7 @@ class MessageReasoningWidget(QWidget):
 QPushButton {
     border: 1px solid #d9d9d9;
     border-radius: 8px;
-    background-color: transparent;
+    background-color: #FFFFFF;
     text-align: left;
     padding: 6px
 }
@@ -188,7 +188,7 @@ QPushButton {
     border-top-right-radius: 8px;
     border-bottom-right-radius: 0;
     border-bottom-left-radius: 0;
-    background-color: transparent;
+    background-color: #FFFFFF;
     text-align: left;
     padding: 6px
 }
@@ -202,7 +202,7 @@ QPushButton {
         self.content_widget.setFixedHeight(100)
         content_widget_style_sheet = f"""
 QTextBrowser {{
-    background-color: transparent; 
+    background-color: #FFFFFF; 
     border: 1px solid #d9d9d9;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
@@ -259,7 +259,7 @@ class MessageToolsCallWidget(QWidget):
 QPushButton {
     border: 1px solid #d9d9d9;
     border-radius: 8px;
-    background-color: transparent;
+    background-color: #FFFFFF;
     text-align: left;
     padding: 6px
 }
@@ -274,7 +274,7 @@ QPushButton {
     border-top-right-radius: 8px;
     border-bottom-right-radius: 0;
     border-bottom-left-radius: 0;
-    background-color: transparent;
+    background-color: #FFFFFF;
     text-align: left;
     padding: 6px
 }
@@ -288,7 +288,7 @@ QPushButton {
         self.content_widget.setFixedHeight(100)
         content_widget_style_sheet = f"""
 QTextBrowser {{
-    background-color: transparent; 
+    background-color: #FFFFFF; 
     border: 1px solid #d9d9d9;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
@@ -345,7 +345,7 @@ class ToolMessageWidget(QWidget):
 QPushButton {
     border: 1px solid #d9d9d9;
     border-radius: 8px;
-    background-color: transparent;
+    background-color: #FFFFFF;
     text-align: left;
     padding: 6px
 }
@@ -360,7 +360,7 @@ QPushButton {
     border-top-right-radius: 8px;
     border-bottom-right-radius: 0;
     border-bottom-left-radius: 0;
-    background-color: transparent;
+    background-color: #FFFFFF;
     text-align: left;
     padding: 6px
 }
@@ -374,7 +374,7 @@ QPushButton {
         self.content_widget.setFixedHeight(100)
         content_widget_style_sheet = f"""
 QTextBrowser {{
-    background-color: transparent; 
+    background-color: #FFFFFF; 
     border: 1px solid #d9d9d9;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
@@ -425,8 +425,12 @@ class MessageWidget(QFrame):
 
         self.message_id = message_id
 
-        self.setFrameStyle(QFrame.NoFrame)
-        self.setStyleSheet("QFrame { background-color: white; }")
+        self.setStyleSheet("""
+QFrame {
+    border: none;
+    background-color: #FFFFFF;
+}
+""")
 
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -475,7 +479,7 @@ class MessageWidget(QFrame):
         delete_button.setStyleSheet("""
 QPushButton {
     border: none;
-    background-color: transparent;
+    background-color: #FFFFFF;
     color: #CCCCCC
 }
 QPushButton:hover {
@@ -521,6 +525,7 @@ class ChatWidget(QWidget):
         self.scroll_area.setWidgetResizable(True)
         scroll_area_style_sheet = f"""
 QScrollArea {{
+    border: none;
     background-color: #FFFFFF;
 }}
 
@@ -529,7 +534,11 @@ QScrollArea {{
         self.scroll_area.setStyleSheet(scroll_area_style_sheet)
 
         self.messages_display = QWidget()
-        self.messages_display.setStyleSheet("background-color: #FFFFFF")
+        self.messages_display.setStyleSheet("""
+QWidget {
+    background-color: #FFFFFF;
+}
+""")
         self.messages_layout = QVBoxLayout(self.messages_display)
         self.messages_layout.setContentsMargins(5, 5, 5, 5)
         self.messages_layout.setSpacing(8)
