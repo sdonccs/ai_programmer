@@ -6,13 +6,13 @@ tools_list = [
         "type": "function",
         "function": {
             "name": "get_dir_tree",
-            "description": "递归读取指定目录的结构，返回目录树形式的字符串（省略了.git、IDE配置目录的详细结构，不会显示__pycache__目录）。当你需要了解现有目录的结构时（例如快速了解项目，获得项目中文件的路径），可使用此工具。",
+            "description": "Recursively read the structure of a specified directory and return a string in the form of a directory tree (omitting detailed structures of .git and IDE configuration directories, and excluding __pycache__ directories). Use this tool when you need to understand the structure of an existing directory (e.g., to quickly familiarize yourself with a project, obtain file paths within the project, or when a user requests an operation on a specific file but you don't know its path).",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "dir_path": {
                         "type": "string",
-                        "description": "要读取的目录的路径（必须是绝对路径，请以用户项目根目录路径为基础来拼接路径）"
+                        "description": "The path of the directory to be read (must be an absolute path, please concatenate the path based on the user's project root directory path)"
                     }
                 },
                 "required": ["dir_path"]
@@ -23,13 +23,13 @@ tools_list = [
         "type": "function",
         "function": {
             "name": "read_file",
-            "description": "读取指定文件的全部内容，返回文件原始内容的字符串。当你需要检查现有文件但不知其内容时（例如分析代码、审阅文本文件或从配置文件中提取信息），可使用此工具。不适用于二进制文件。",
+            "description": "Read the entire content of the specified file and return the original content as a string. Use this tool when you need to inspect an existing file but are unaware of its content (e.g., analyzing code, reviewing text files, or extracting information from configuration files). Not suitable for binary files.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "file_path": {
                         "type": "string",
-                        "description": "要读取的文件的路径（必须是绝对路径，请以用户项目根目录路径为基础来拼接路径）"
+                        "description": "The path of the file to be read (must be an absolute path, please concatenate the path based on the user's project root directory path)"
                     }
                 },
                 "required": ["file_path"]
@@ -40,13 +40,13 @@ tools_list = [
         "type": "function",
         "function": {
             "name": "create_file",
-            "description": "在指定路径创建一个空文件。如果路径中的父目录不存在，会自动创建。当你需要创建文件时，可使用此工具。调用此工具前，请先询问用户。",
+            "description": "Create an empty file at the specified path. If the parent directories in the path do not exist, they will be created automatically. Use this tool when you need to create a file.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "file_path": {
                         "type": "string",
-                        "description": "要创建的文件的路径（必须是绝对路径，请以用户项目根目录路径为基础来拼接路径）"
+                        "description": "The path of the file to be created (must be an absolute path, please concatenate the path based on the user's project root directory path)"
                     }
                 },
                 "required": ["file_path"]
@@ -57,21 +57,21 @@ tools_list = [
         "type": "function",
         "function": {
             "name": "edit_file",
-            "description": "通过用新文本替换旧文本来编辑指定的文件。当你需要编辑文件时，可使用此工具。调用此工具前，请先询问用户。",
+            "description": "Edit the specified file by replacing the old text with new text. Use this tool when you need to edit a file.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "file_path": {
                         "type": "string",
-                        "description": "要编辑的文件的路径（必须是绝对路径，请以用户项目根目录路径为基础来拼接路径）"
+                        "description": "The path of the file to be edited (must be an absolute path, please concatenate the path based on the user's project root directory path)"
                     },
                     "new_text": {
                         "type": "string",
-                        "description": "新文本"
+                        "description": "New text"
                     },
                     "old_text": {
                         "type": "string",
-                        "description": "旧文本，如果此项留空（即填“空字符串”），则会用新文本完全覆盖文件中所有的旧文本"
+                        "description": "Old text. If this field is left blank (i.e., filled with an \"empty string\"), the new text will completely overwrite all old text in the file"
                     }
                 },
                 "required": ["file_path", "new_text", "old_text"]
@@ -82,13 +82,13 @@ tools_list = [
         "type": "function",
         "function": {
             "name": "delete_file_or_dir",
-            "description": "删除指定的文件或目录。当你需要删除文件或目录时，可使用此工具。调用此工具前，请先询问用户。",
+            "description": "Delete the specified file or directory. You can use this tool when you need to delete files or directories.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "path": {
                         "type": "string",
-                        "description": "要删除的文件或目录的路径（必须是绝对路径，请以用户项目根目录路径为基础来拼接路径）"
+                        "description": "The path of the file or directory to be deleted (must be an absolute path, please concatenate the path based on the user's project root directory path)"
                     }
                 },
                 "required": ["path"]
