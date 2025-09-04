@@ -276,7 +276,7 @@ QTextBrowser {{
         else:
             self.content_widget.show()
             self.toggle_button.setText("思考内容")
-            self.toggle_button.setIcon(QIcon("./assets/images/icon/expanded.svg"))
+            self.toggle_button.setIcon(QIcon("assets/images/icon/expanded_down.svg"))
             self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.expanded_toggle_button_style_sheet)
             self.is_expanded = True
@@ -362,7 +362,7 @@ QTextBrowser {{
         else:
             self.content_widget.show()
             self.toggle_button.setText("工具调用")
-            self.toggle_button.setIcon(QIcon("./assets/images/icon/expanded.svg"))
+            self.toggle_button.setIcon(QIcon("assets/images/icon/expanded_down.svg"))
             self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.expanded_toggle_button_style_sheet)
             self.is_expanded = True
@@ -448,7 +448,7 @@ QTextBrowser {{
         else:
             self.content_widget.show()
             self.toggle_button.setText("工具返回")
-            self.toggle_button.setIcon(QIcon("./assets/images/icon/expanded.svg"))
+            self.toggle_button.setIcon(QIcon("assets/images/icon/expanded_down.svg"))
             self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.expanded_toggle_button_style_sheet)
             self.is_expanded = True
@@ -564,7 +564,7 @@ class ChatWidget(QWidget):
     def __init__(self):
         super().__init__()
 
-        layout = QVBoxLayout()
+        main_layout = QVBoxLayout()
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
@@ -590,7 +590,29 @@ QWidget {
         self.messages_layout.addStretch()
         self.scroll_area.setWidget(self.messages_display)
 
-        layout.addWidget(self.scroll_area)
+        main_layout.addWidget(self.scroll_area)
+
+        # 操作按钮栏
+        self.action_bar = QWidget()
+        self.action_bar.setFixedHeight(40)
+        action_bar_layout = QHBoxLayout(self.action_bar)
+        action_bar_layout.setContentsMargins(0, 5, 0, 5)
+        action_bar_layout.setSpacing(10)
+        
+        self.clear_messages_button = QPushButton("清空消息")
+        font = QFont(font_family_name)
+        font.setPixelSize(14)
+        font.setWeight(QFont.Weight.Normal)
+        self.clear_messages_button.setFont(font)
+        self.clear_messages_button.setFixedHeight(30)
+        self.clear_messages_button.clicked.connect(self.clear_messages)
+        action_bar_layout.addWidget(self.clear_messages_button)
+
+        action_bar_layout.addStretch()
+        
+        self.action_bar.hide()  # 初始隐藏
+        self.is_action_bar_expanded = False
+        main_layout.addWidget(self.action_bar)
 
         input_layout = QHBoxLayout()
 
@@ -611,20 +633,36 @@ QPlainTextEdit {{
         self.input_text.setFont(font)
         input_layout.addWidget(self.input_text)
 
+        # 右侧按钮区域（垂直布局）
+        buttons_layout = QVBoxLayout()
+        buttons_layout.setContentsMargins(0, 0, 0, 0)
+        buttons_layout.setSpacing(5)
+        
+        # 展开按钮
+        self.expand_button = QPushButton()
+        self.expand_button.setFixedSize(50, 25)
+        self.expand_button.setIcon(QIcon("./assets/images/icon/expand.svg"))
+        self.expand_button.setIconSize(QSize(16, 16))
+        self.expand_button.clicked.connect(self.toggle_action_bar)
+        buttons_layout.addWidget(self.expand_button)
+
+        # 发送按钮
         self.send_button = QPushButton("发送")
         font = QFont(font_family_name)
         font.setPixelSize(14)
         font.setWeight(QFont.Weight.Normal)
         self.send_button.setFont(font)
-        self.send_button.setFixedSize(50, 100)
+        self.send_button.setFixedSize(50, 70)
         self.send_button.clicked.connect(self.send_message)
         short_cut = QShortcut(Qt.CTRL | Qt.Key_Return, self.input_text)
         short_cut.activated.connect(self.send_message)
-        input_layout.addWidget(self.send_button)
+        buttons_layout.addWidget(self.send_button)
+        
+        input_layout.addLayout(buttons_layout)
 
-        layout.addLayout(input_layout)
+        main_layout.addLayout(input_layout)
 
-        self.setLayout(layout)
+        self.setLayout(main_layout)
 
         self.thread = QThread()
         self.agent_worker = AgentWorker()
@@ -691,6 +729,32 @@ QPlainTextEdit {{
 
     def on_finished(self):
         self.send_button.setEnabled(True)
+
+    def toggle_action_bar(self):
+        """切换操作按钮栏的显示/隐藏状态"""
+        if self.is_action_bar_expanded:
+            self.action_bar.hide()
+            self.expand_button.setIcon(QIcon("./assets/images/icon/expand.svg"))
+            self.is_action_bar_expanded = False
+        else:
+            self.action_bar.show()
+            self.expand_button.setIcon(QIcon("assets/images/icon/expanded_up.svg"))
+            self.is_action_bar_expanded = True
+
+    def clear_messages(self):
+        """清空所有消息（保留系统消息）"""
+        # 清空UI中的消息控件
+        while self.messages_layout.count() > 1:  # 保留最后的stretch
+            item = self.messages_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        
+        # 清空Agent的消息列表（保留系统消息）
+        system_messages = [msg for msg in self.agent_worker.main_agent.messages if msg.get("role") == "system"]
+        self.agent_worker.main_agent.messages = system_messages
+        
+        # 清空ID到索引的映射
+        self.id_to_index_mapping.clear()
 
     def closeEvent(self, event):
         self.thread.quit()
