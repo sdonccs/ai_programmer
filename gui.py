@@ -65,15 +65,27 @@ def load_font():
 class CustomPlainTextEdit(QPlainTextEdit):
     """自定义输入框，解决拼音输入法时占位符不消失的问题"""
     
+    # 自定义信号，用于通知输入状态变化
+    input_state_changed = Signal(bool)  # True表示有效输入，False表示无效输入
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         self._has_preedit = False
         self._original_placeholder = ""
+        
+        # 连接文本变化信号
+        self.textChanged.connect(self._check_input_state)
     
     def setPlaceholderText(self, text):
         """重写设置占位符文本的方法"""
         self._original_placeholder = text
         super().setPlaceholderText(text)
+    
+    def _check_input_state(self):
+        """检查输入状态并发送信号"""
+        # 只有当没有预编辑文本且输入框不为空时，才认为是有效输入
+        has_valid_input = not self._has_preedit and self.toPlainText().strip() != ""
+        self.input_state_changed.emit(has_valid_input)
     
     def inputMethodEvent(self, event: QInputMethodEvent):
         """处理输入法事件"""
@@ -85,12 +97,14 @@ class CustomPlainTextEdit(QPlainTextEdit):
             if not self._has_preedit:
                 self._has_preedit = True
                 super().setPlaceholderText("")  # 隐藏占位符
+                self._check_input_state()  # 检查输入状态
         else:
             # 如果没有预编辑文本且输入框为空，显示占位符
             if self._has_preedit:
                 self._has_preedit = False
                 if self.toPlainText() == "":
                     super().setPlaceholderText(self._original_placeholder)
+                self._check_input_state()  # 检查输入状态
         
         # 调用父类方法处理输入法事件
         super().inputMethodEvent(event)
@@ -210,7 +224,7 @@ class MessageReasoningWidget(QWidget):
 
         self.toggle_button = QPushButton("思考内容")
         self.toggle_button.setLayoutDirection(Qt.RightToLeft)
-        self.toggle_button.setIcon(QIcon("./assets/images/icon/expand.svg"))
+        self.toggle_button.setIcon(QIcon("assets/images/icon/message_expand.svg"))
         self.toggle_button.setIconSize(QSize(24, 24))
         self.toggle_button.setFont(font)
         self.toggle_button.setFixedHeight(28)
@@ -269,14 +283,14 @@ QTextBrowser {{
         if self.is_expanded:
             self.content_widget.hide()
             self.toggle_button.setText("思考内容")
-            self.toggle_button.setIcon(QIcon("./assets/images/icon/expand.svg"))
+            self.toggle_button.setIcon(QIcon("assets/images/icon/message_expand.svg"))
             self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
             self.is_expanded = False
         else:
             self.content_widget.show()
             self.toggle_button.setText("思考内容")
-            self.toggle_button.setIcon(QIcon("assets/images/icon/expanded_down.svg"))
+            self.toggle_button.setIcon(QIcon("assets/images/icon/message_expanded_down.svg"))
             self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.expanded_toggle_button_style_sheet)
             self.is_expanded = True
@@ -296,7 +310,7 @@ class MessageToolsCallWidget(QWidget):
 
         self.toggle_button = QPushButton("工具调用")
         self.toggle_button.setLayoutDirection(Qt.RightToLeft)
-        self.toggle_button.setIcon(QIcon("./assets/images/icon/expand.svg"))
+        self.toggle_button.setIcon(QIcon("assets/images/icon/message_expand.svg"))
         self.toggle_button.setIconSize(QSize(24, 24))
         self.toggle_button.setFont(font)
         self.toggle_button.setFixedHeight(28)
@@ -355,14 +369,14 @@ QTextBrowser {{
         if self.is_expanded:
             self.content_widget.hide()
             self.toggle_button.setText("工具调用")
-            self.toggle_button.setIcon(QIcon("./assets/images/icon/expand.svg"))
+            self.toggle_button.setIcon(QIcon("assets/images/icon/message_expand.svg"))
             self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
             self.is_expanded = False
         else:
             self.content_widget.show()
             self.toggle_button.setText("工具调用")
-            self.toggle_button.setIcon(QIcon("assets/images/icon/expanded_down.svg"))
+            self.toggle_button.setIcon(QIcon("assets/images/icon/message_expanded_down.svg"))
             self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.expanded_toggle_button_style_sheet)
             self.is_expanded = True
@@ -382,7 +396,7 @@ class ToolMessageWidget(QWidget):
 
         self.toggle_button = QPushButton("工具返回")
         self.toggle_button.setLayoutDirection(Qt.RightToLeft)
-        self.toggle_button.setIcon(QIcon("./assets/images/icon/expand.svg"))
+        self.toggle_button.setIcon(QIcon("assets/images/icon/message_expand.svg"))
         self.toggle_button.setIconSize(QSize(24, 24))
         self.toggle_button.setFont(font)
         self.toggle_button.setFixedHeight(28)
@@ -441,14 +455,14 @@ QTextBrowser {{
         if self.is_expanded:
             self.content_widget.hide()
             self.toggle_button.setText("工具返回")
-            self.toggle_button.setIcon(QIcon("./assets/images/icon/expand.svg"))
+            self.toggle_button.setIcon(QIcon("assets/images/icon/message_expand.svg"))
             self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.toggle_button_style_sheet)
             self.is_expanded = False
         else:
             self.content_widget.show()
             self.toggle_button.setText("工具返回")
-            self.toggle_button.setIcon(QIcon("assets/images/icon/expanded_down.svg"))
+            self.toggle_button.setIcon(QIcon("assets/images/icon/message_expanded_down.svg"))
             self.toggle_button.setIconSize(QSize(24, 24))
             self.toggle_button.setStyleSheet(self.expanded_toggle_button_style_sheet)
             self.is_expanded = True
@@ -605,6 +619,26 @@ QWidget {
         font.setWeight(QFont.Weight.Normal)
         self.clear_messages_button.setFont(font)
         self.clear_messages_button.setFixedHeight(30)
+        clear_button_style_sheet = """
+QPushButton {
+    border: 1px solid #ff4d4f;
+    border-radius: 6px;
+    background-color: #ffffff;
+    color: #ff4d4f;
+    padding: 4px 12px;
+}
+QPushButton:hover {
+    background-color: #fff2f0;
+    border-color: #ff7875;
+    color: #ff7875;
+}
+QPushButton:pressed {
+    background-color: #ffccc7;
+    border-color: #d9363e;
+    color: #d9363e;
+}
+"""
+        self.clear_messages_button.setStyleSheet(clear_button_style_sheet)
         self.clear_messages_button.clicked.connect(self.clear_messages)
         action_bar_layout.addWidget(self.clear_messages_button)
 
@@ -631,6 +665,10 @@ QPlainTextEdit {{
         font.setPixelSize(14)
         font.setWeight(QFont.Weight.Normal)
         self.input_text.setFont(font)
+        
+        # 连接输入状态变化信号到发送按钮状态更新函数
+        self.input_text.input_state_changed.connect(self.update_send_button_state)
+        
         input_layout.addWidget(self.input_text)
 
         # 右侧按钮区域（垂直布局）
@@ -641,8 +679,23 @@ QPlainTextEdit {{
         # 展开按钮
         self.expand_button = QPushButton()
         self.expand_button.setFixedSize(50, 25)
-        self.expand_button.setIcon(QIcon("./assets/images/icon/expand.svg"))
+        self.expand_button.setIcon(QIcon("./assets/images/icon/operation_expand.svg"))
         self.expand_button.setIconSize(QSize(16, 16))
+        expand_button_style_sheet = """
+QPushButton {
+    border: 1px solid #999999;
+    border-radius: 6px;
+    background-color: #F3F3F3;
+    color: #333333;
+}
+QPushButton:hover {
+    background-color: #E6E6E6;
+}
+QPushButton:pressed {
+    background-color: #CDCDCD;
+}
+"""
+        self.expand_button.setStyleSheet(expand_button_style_sheet)
         self.expand_button.clicked.connect(self.toggle_action_bar)
         buttons_layout.addWidget(self.expand_button)
 
@@ -653,6 +706,24 @@ QPlainTextEdit {{
         font.setWeight(QFont.Weight.Normal)
         self.send_button.setFont(font)
         self.send_button.setFixedSize(50, 70)
+        send_button_style_sheet = """
+QPushButton {
+    border: 1px solid #999999;
+    border-radius: 6px;
+    background-color: #00CC76;
+    color: #ffffff;
+}
+QPushButton:hover {
+    background-color: #07C160;
+}
+QPushButton:pressed {
+    background-color: #00B96B;
+}
+QPushButton:disabled {
+    background-color: #979797;
+}
+"""
+        self.send_button.setStyleSheet(send_button_style_sheet)
         self.send_button.clicked.connect(self.send_message)
         short_cut = QShortcut(Qt.CTRL | Qt.Key_Return, self.input_text)
         short_cut.activated.connect(self.send_message)
@@ -674,8 +745,17 @@ QPlainTextEdit {{
         self.agent_worker.finished.connect(self.on_finished)
         self.agent_worker.get_message_id.connect(self.on_get_message_id)
         self.id_to_index_mapping = {}
+        
+        # 初始状态下禁用发送按钮（因为输入框为空）
+        self.send_button.setEnabled(False)
+        self.is_processing = False  # 添加处理状态标志
 
         self.thread.start()
+
+    def update_send_button_state(self, has_valid_input):
+        """更新发送按钮的启用/禁用状态"""
+        # 只有当有有效输入且不在处理中时，才启用发送按钮
+        self.send_button.setEnabled(has_valid_input and not self.is_processing)
 
     def on_get_message_id(self, message_uid, message_index):
         self.id_to_index_mapping[message_uid] = message_index
@@ -699,12 +779,17 @@ QPlainTextEdit {{
         message_widget.deleteLater()
 
     def send_message(self):
+        # 设置处理状态
+        self.is_processing = True
         self.send_button.setEnabled(False)
 
         raw = self.input_text.toPlainText()
 
         if raw.strip() == "":
-            self.send_button.setEnabled(True)
+            self.is_processing = False
+            # 根据当前输入状态更新按钮
+            has_valid_input = not self.input_text._has_preedit and self.input_text.toPlainText().strip() != ""
+            self.send_button.setEnabled(has_valid_input)
             return
 
         user_message_id = uuid.uuid4()
@@ -728,17 +813,21 @@ QPlainTextEdit {{
         self.insert_message(message_id, "./assets/images/avatar/tool.svg", tool_name, tool_content, None, None)
 
     def on_finished(self):
-        self.send_button.setEnabled(True)
+        # 重置处理状态
+        self.is_processing = False
+        # 根据当前输入状态更新按钮
+        has_valid_input = not self.input_text._has_preedit and self.input_text.toPlainText().strip() != ""
+        self.send_button.setEnabled(has_valid_input)
 
     def toggle_action_bar(self):
         """切换操作按钮栏的显示/隐藏状态"""
         if self.is_action_bar_expanded:
             self.action_bar.hide()
-            self.expand_button.setIcon(QIcon("./assets/images/icon/expand.svg"))
+            self.expand_button.setIcon(QIcon("./assets/images/icon/operation_expand.svg"))
             self.is_action_bar_expanded = False
         else:
             self.action_bar.show()
-            self.expand_button.setIcon(QIcon("assets/images/icon/expanded_up.svg"))
+            self.expand_button.setIcon(QIcon("./assets/images/icon/operation_expanded_up.svg"))
             self.is_action_bar_expanded = True
 
     def clear_messages(self):
