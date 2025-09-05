@@ -1248,8 +1248,6 @@ class MainWindow(QMainWindow):
     def __init__(self, root_dir, work_dir, selected_model):
         super().__init__()
 
-        load_font()
-
         self.setWindowTitle("AI程序员")
         self.setGeometry(500, 150, 600, 800)
 
@@ -1269,6 +1267,8 @@ class MainWindow(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication([])
+
+    load_font()
     
     # 显示启动页
     startup_dialog = StartupDialog()
