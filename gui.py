@@ -1051,18 +1051,16 @@ QComboBox {
 QComboBox:focus {
     border-color: #1890ff;
 }
+/* 隐藏整个下拉按钮区域 */
 QComboBox::drop-down {
-    subcontrol-origin: padding;
-    subcontrol-position: top right;
-    width: 20px;
-    border-left: 1px solid #d9d9d9;
+    width: 0px;          /* 宽度设为 0 */
+    border: none;        /* 去掉分隔线 */
 }
+/* 隐藏箭头本身 */
 QComboBox::down-arrow {
-    image: none;
-    border-left: 4px solid transparent;
-    border-right: 4px solid transparent;
-    border-top: 4px solid #8c8c8c;
-    margin-left: 6px;
+    image: none;         /* 不加载任何图片 */
+    width: 0px;
+    height: 0px;
 }
 QComboBox QAbstractItemView {
     border: 1px solid #d9d9d9;
