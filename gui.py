@@ -8,7 +8,7 @@ from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPlainTextEdit, QPushButton, QFrame, QLabel, QScrollArea, QTextBrowser, QFileDialog, QComboBox, QLineEdit, QDialog, QMessageBox
 )
-from PySide6.QtGui import QFont, QShortcut, QFontDatabase, QIcon, QInputMethodEvent
+from PySide6.QtGui import QFont, QShortcut, QFontDatabase, QIcon, QInputMethodEvent, QPixmap
 
 from helpers.agent import Agent
 from helpers.model_api_client import openrouter_client, openrouter_model_names
@@ -644,6 +644,33 @@ QPushButton:pressed {
         self.clear_messages_button.setStyleSheet(clear_button_style_sheet)
         self.clear_messages_button.clicked.connect(self.clear_messages)
         action_bar_layout.addWidget(self.clear_messages_button)
+        
+        # 记录聊天按钮
+        self.save_chat_button = QPushButton("截图聊天")
+        self.save_chat_button.setFont(font)
+        self.save_chat_button.setFixedHeight(30)
+        save_chat_button_style_sheet = """
+QPushButton {
+    border-radius: 6px;
+    background-color: #ffffff;
+    color: #1890ff;
+    padding: 4px 12px;
+    border: 1px solid #1890ff;
+}
+QPushButton:hover {
+    background-color: #e6f7ff;
+    border-color: #40a9ff;
+    color: #40a9ff;
+}
+QPushButton:pressed {
+    background-color: #bae7ff;
+    border-color: #096dd9;
+    color: #096dd9;
+}
+"""
+        self.save_chat_button.setStyleSheet(save_chat_button_style_sheet)
+        self.save_chat_button.clicked.connect(self.save_chat_screenshot)
+        action_bar_layout.addWidget(self.save_chat_button)
 
         action_bar_layout.addStretch()
         
@@ -844,6 +871,72 @@ QPushButton:disabled {
         
         # 清空ID到索引的映射
         self.id_to_index_mapping.clear()
+
+    def save_chat_screenshot(self):
+        """保存聊天记录为PNG图片"""
+        try:
+            # 创建保存目录
+            save_dir = "saved_chats"
+            if not os.path.exists(save_dir):
+                os.makedirs(save_dir)
+            
+            # 生成时间戳文件名
+            current_time = datetime.now()
+            filename = current_time.strftime("%Y_%m_%d_%H_%M_%S.png")
+            file_path = os.path.join(save_dir, filename)
+            
+            # 获取滚动区域内容的截图
+            scroll_widget = self.scroll_area.widget()
+            if scroll_widget:
+                # 临时保存当前滚动位置
+                scroll_bar = self.scroll_area.verticalScrollBar()
+                original_scroll_position = scroll_bar.value()
+                
+                # 滚动到顶部
+                scroll_bar.setValue(0)
+                
+                # 确保布局更新
+                QApplication.processEvents()
+                
+                # 获取实际内容大小
+                content_size = scroll_widget.sizeHint()
+                actual_size = scroll_widget.size()
+                
+                # 使用较大的尺寸确保包含所有内容
+                width = max(content_size.width(), actual_size.width())
+                height = max(content_size.height(), actual_size.height())
+                
+                # 创建pixmap
+                pixmap = QPixmap(width, height)
+                pixmap.fill(Qt.white)  # 设置白色背景
+                
+                # 渲染内容
+                scroll_widget.render(pixmap)
+                
+                # 恢复原始滚动位置
+                scroll_bar.setValue(original_scroll_position)
+                
+                # 保存为PNG文件
+                success = pixmap.save(file_path, "PNG")
+                
+                if success:
+                    # 显示成功消息
+                    QMessageBox.information(
+                        self, 
+                        "保存成功", 
+                        f"聊天记录已保存到：\n{file_path}"
+                    )
+                else:
+                    QMessageBox.warning(self, "保存失败", "无法保存聊天记录图片。")
+            else:
+                QMessageBox.warning(self, "保存失败", "没有聊天内容可以保存。")
+                    
+        except Exception as e:
+            QMessageBox.critical(
+                self, 
+                "保存失败", 
+                f"保存聊天记录时出现错误：\n{str(e)}"
+            )
 
     def closeEvent(self, event):
         self.thread.quit()
