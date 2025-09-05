@@ -263,10 +263,6 @@ QPushButton {
 QTextBrowser {{
     background-color: #FFFFFF; 
     border: 1px solid #d9d9d9;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 8px;
-    border-bottom-left-radius: 8px;
 }}
 
 {vertical_scrollBar_style_sheet}
@@ -349,10 +345,6 @@ QPushButton {
 QTextBrowser {{
     background-color: #FFFFFF; 
     border: 1px solid #d9d9d9;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 8px;
-    border-bottom-left-radius: 8px;
 }}
 
 {vertical_scrollBar_style_sheet}
@@ -435,10 +427,6 @@ QPushButton {
 QTextBrowser {{
     background-color: #FFFFFF; 
     border: 1px solid #d9d9d9;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 8px;
-    border-bottom-left-radius: 8px;
 }}
 
 {vertical_scrollBar_style_sheet}
