@@ -545,6 +545,10 @@ QPushButton:hover {
     background-color: #FFE6E6;
     color: #FF0000;
 }
+QPushButton:pressed {
+    background-color: #ffccc7;
+    color: #d9363e;
+}
 """)
         delete_button.clicked.connect(lambda: self.delete_requested.emit(self.message_id, self))
         header_layout.addWidget(delete_button)
@@ -621,7 +625,6 @@ QWidget {
         self.clear_messages_button.setFixedHeight(30)
         clear_button_style_sheet = """
 QPushButton {
-    border: 1px solid #ff4d4f;
     border-radius: 6px;
     background-color: #ffffff;
     color: #ff4d4f;
@@ -675,26 +678,24 @@ QPlainTextEdit {{
         buttons_layout = QVBoxLayout()
         buttons_layout.setContentsMargins(0, 0, 0, 0)
         buttons_layout.setSpacing(5)
-        
-        # 展开按钮
+
+        # 操作栏展开按钮
         self.expand_button = QPushButton()
         self.expand_button.setFixedSize(50, 25)
-        self.expand_button.setIcon(QIcon("./assets/images/icon/operation_expand.svg"))
-        self.expand_button.setIconSize(QSize(16, 16))
+        self.expand_button.setIcon(QIcon("assets/images/icon/operation_expand.svg"))
+        self.expand_button.setIconSize(QSize(40, 20))
         expand_button_style_sheet = """
-QPushButton {
-    border: 1px solid #999999;
-    border-radius: 6px;
-    background-color: #F3F3F3;
-    color: #333333;
-}
-QPushButton:hover {
-    background-color: #E6E6E6;
-}
-QPushButton:pressed {
-    background-color: #CDCDCD;
-}
-"""
+        QPushButton {
+            border: 1px solid #E6E6E6;
+            border-radius: 4px;
+        }
+        QPushButton:hover {
+            background-color: #E4E4E4;
+        }
+        QPushButton:pressed {
+            background-color: #CDCDCD;
+        }
+        """
         self.expand_button.setStyleSheet(expand_button_style_sheet)
         self.expand_button.clicked.connect(self.toggle_action_bar)
         buttons_layout.addWidget(self.expand_button)
@@ -708,19 +709,20 @@ QPushButton:pressed {
         self.send_button.setFixedSize(50, 70)
         send_button_style_sheet = """
 QPushButton {
-    border: 1px solid #999999;
-    border-radius: 6px;
-    background-color: #00CC76;
+    border: none;
+    border-radius: 4px;
+    background-color: #07C160;
     color: #ffffff;
 }
 QPushButton:hover {
-    background-color: #07C160;
+    background-color: #06B75B;
 }
 QPushButton:pressed {
-    background-color: #00B96B;
+    background-color: #06AE56;
 }
 QPushButton:disabled {
-    background-color: #979797;
+    background-color: #E1E1E1;
+    color: #9D9D9D;
 }
 """
         self.send_button.setStyleSheet(send_button_style_sheet)
@@ -823,11 +825,9 @@ QPushButton:disabled {
         """切换操作按钮栏的显示/隐藏状态"""
         if self.is_action_bar_expanded:
             self.action_bar.hide()
-            self.expand_button.setIcon(QIcon("./assets/images/icon/operation_expand.svg"))
             self.is_action_bar_expanded = False
         else:
             self.action_bar.show()
-            self.expand_button.setIcon(QIcon("./assets/images/icon/operation_expanded_up.svg"))
             self.is_action_bar_expanded = True
 
     def clear_messages(self):
