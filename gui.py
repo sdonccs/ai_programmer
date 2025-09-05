@@ -131,7 +131,7 @@ class AgentWorker(QObject):
     main_agent = Agent(
         agent_name="main_agent",
         client=openrouter_client,
-        model_name=openrouter_model_names["anthropic"][0],
+        model_name=openrouter_model_names["moonshotai"][0],
         system_prompt=get_prompt(
             prompt_name="main_system",
             variables={

@@ -20,7 +20,7 @@ openrouter_model_names = {
         "qwen/qwen3-coder"  # 编程能力第三（价格低）（工具调用能力弱）
     ],
     "moonshotai": [
-        "moonshotai/kimi-k2"  # 综合能力第二（价格低）（工具调用能力中）
+        "moonshotai/kimi-k2-0905"  # 综合能力第二（价格低）（工具调用能力中）
     ]
 }
 
