@@ -1107,7 +1107,7 @@ QComboBox QAbstractItemView {
             line_edit.text()
         )
         if directory:
-            directory = directory.replace("/", "\\") if os.name == 'nt' else directory
+            directory = directory.replace("\\", "/")
             line_edit.setText(directory)
             self.root_dir = directory
             
@@ -1119,7 +1119,7 @@ QComboBox QAbstractItemView {
             line_edit.text()
         )
         if directory:
-            directory = directory.replace("/", "\\") if os.name == 'nt' else directory
+            directory = directory.replace("\\", "/")
             line_edit.setText(directory)
             self.work_dir = directory
             
