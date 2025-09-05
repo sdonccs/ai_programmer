@@ -1,11 +1,12 @@
 import json
 import uuid
+import os
 from datetime import datetime
 
 from PySide6.QtCore import Qt, QObject, QThread, Signal, QSize
 from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPlainTextEdit, QPushButton, QFrame, QLabel, QScrollArea, QTextBrowser
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPlainTextEdit, QPushButton, QFrame, QLabel, QScrollArea, QTextBrowser, QFileDialog, QComboBox, QLineEdit, QDialog, QMessageBox
 )
 from PySide6.QtGui import QFont, QShortcut, QFontDatabase, QIcon, QInputMethodEvent
 
@@ -128,28 +129,29 @@ class AgentWorker(QObject):
     get_message_id = Signal(object, int)
     start_work = Signal(str)
 
-    main_agent = Agent(
-        agent_name="main_agent",
-        client=openrouter_client,
-        model_name=openrouter_model_names["moonshotai"][0],
-        system_prompt=get_prompt(
-            prompt_name="main_system",
-            variables={
-                "root_dir_path": "C:/alocation/projects/ai_programmer",
-                "cwd_path": "C:/alocation/projects/ai_programmer"
-            }
-        ),
-        tools=tools_list
-    )
-
-    def __init__(self):
+    def __init__(self, root_dir, work_dir, selected_model):
         super().__init__()
+        
+        self.main_agent = Agent(
+            agent_name="main_agent",
+            client=openrouter_client,
+            model_name=selected_model,
+            system_prompt=get_prompt(
+                prompt_name="main_system",
+                variables={
+                    "root_dir_path": root_dir,
+                    "cwd_path": work_dir
+                }
+            ),
+            tools=tools_list
+        )
+        
         self.start_work.connect(self.run)
 
     def run(self, user_content):
-        message_dict = AgentWorker.main_agent.user_call(user_content)
+        message_dict = self.main_agent.user_call(user_content)
         assistant_message_id = uuid.uuid4()
-        assistant_message_index = len(AgentWorker.main_agent.messages) - 1
+        assistant_message_index = len(self.main_agent.messages) - 1
         self.get_message_id.emit(assistant_message_id, assistant_message_index)
         self.get_assistant_message_dict.emit(assistant_message_id, message_dict)
 
@@ -163,7 +165,7 @@ class AgentWorker(QObject):
                 tool_return = tool(**tool_args)
                 tool_content = str(tool_return)
 
-                AgentWorker.main_agent.messages.append(
+                self.main_agent.messages.append(
                     {
                         "role": "tool",
                         "tool_call_id": tool_id,
@@ -171,13 +173,13 @@ class AgentWorker(QObject):
                     }
                 )
                 tool_message_id = uuid.uuid4()
-                tool_message_index = len(AgentWorker.main_agent.messages) - 1
+                tool_message_index = len(self.main_agent.messages) - 1
                 self.get_message_id.emit(tool_message_id, tool_message_index)
 
                 self.get_tool_result.emit(tool_message_id, tool_name, tool_content)
-            message_dict = AgentWorker.main_agent()
+            message_dict = self.main_agent()
             assistant_message_id = uuid.uuid4()
-            assistant_message_index = len(AgentWorker.main_agent.messages) - 1
+            assistant_message_index = len(self.main_agent.messages) - 1
             self.get_message_id.emit(assistant_message_id, assistant_message_index)
             self.get_assistant_message_dict.emit(assistant_message_id, message_dict)
 
@@ -567,7 +569,7 @@ QPushButton:pressed {
 
 
 class ChatWidget(QWidget):
-    def __init__(self):
+    def __init__(self, root_dir, work_dir, selected_model):
         super().__init__()
 
         main_layout = QVBoxLayout()
@@ -726,7 +728,7 @@ QPushButton:disabled {
         self.setLayout(main_layout)
 
         self.thread = QThread()
-        self.agent_worker = AgentWorker()
+        self.agent_worker = AgentWorker(root_dir, work_dir, selected_model)
 
         self.agent_worker.moveToThread(self.thread)
 
@@ -839,13 +841,315 @@ QPushButton:disabled {
         event.accept()
 
 
-class MainWindow(QMainWindow):
+class StartupDialog(QDialog):
     def __init__(self):
+        super().__init__()
+        
+        self.root_dir = ""
+        self.work_dir = ""
+        self.selected_model = openrouter_model_names["anthropic"][0]
+        
+        self.init_ui()
+        
+    def init_ui(self):
+        self.setWindowTitle("AI程序员 - 启动配置")
+        self.setFixedSize(600, 550)
+        self.setModal(True)
+        
+        # 设置窗口样式
+        self.setStyleSheet("""
+QDialog {
+    background-color: #ffffff;
+}
+""")
+        
+        # 设置窗口居中
+        screen = QApplication.primaryScreen().geometry()
+        x = (screen.width() - self.width()) // 2
+        y = (screen.height() - self.height()) // 2
+        self.move(x, y)
+        
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(40, 25, 40, 25)
+        main_layout.setSpacing(15)
+        
+        # 欢迎标题
+        welcome_label = QLabel("欢迎")
+        welcome_font = QFont(font_family_name)
+        welcome_font.setPixelSize(36)
+        welcome_font.setWeight(QFont.Weight.Bold)
+        welcome_label.setFont(welcome_font)
+        welcome_label.setAlignment(Qt.AlignCenter)
+        welcome_label.setStyleSheet("color: #1890ff; margin: 10px 0px;")
+        welcome_label.setFixedHeight(60)
+        main_layout.addWidget(welcome_label)
+        
+        # 配置区域
+        config_widget = QWidget()
+        config_layout = QVBoxLayout(config_widget)
+        config_layout.setContentsMargins(0, 0, 0, 0)
+        config_layout.setSpacing(12)
+        
+        # 配置项1：项目根目录
+        root_dir_group = self.create_config_group(
+            "1. 配置项目根目录",
+            self.root_dir,
+            self.browse_root_directory
+        )
+        config_layout.addWidget(root_dir_group)
+        
+        # 配置项2：工作目录
+        work_dir_group = self.create_config_group(
+            "2. 配置工作目录", 
+            self.work_dir,
+            self.browse_work_directory
+        )
+        config_layout.addWidget(work_dir_group)
+        
+        # 配置项3：选择模型
+        model_group = self.create_model_group()
+        config_layout.addWidget(model_group)
+        
+        main_layout.addWidget(config_widget)
+        
+        # 添加一些弹性空间
+        main_layout.addStretch()
+        
+        # 按钮区域
+        button_layout = QHBoxLayout()
+        button_layout.setContentsMargins(0, 10, 0, 0)
+        button_layout.addStretch()
+        
+        self.start_button = QPushButton("开始使用")
+        self.start_button.setFixedSize(120, 40)
+        button_font = QFont(font_family_name)
+        button_font.setPixelSize(16)
+        button_font.setWeight(QFont.Weight.Normal)
+        self.start_button.setFont(button_font)
+        self.start_button.setStyleSheet("""
+QPushButton {
+    border: none;
+    border-radius: 6px;
+    background-color: #1890ff;
+    color: white;
+}
+QPushButton:hover {
+    background-color: #40a9ff;
+}
+QPushButton:pressed {
+    background-color: #096dd9;
+}
+""")
+        self.start_button.clicked.connect(self.accept)
+        button_layout.addWidget(self.start_button)
+        
+        main_layout.addLayout(button_layout)
+        self.setLayout(main_layout)
+        
+    def create_config_group(self, title, default_value, browse_func):
+        """创建配置组件"""
+        group_widget = QWidget()
+        group_layout = QVBoxLayout(group_widget)
+        group_layout.setContentsMargins(0, 0, 0, 0)
+        group_layout.setSpacing(6)
+        
+        # 标题
+        title_label = QLabel(title)
+        title_font = QFont(font_family_name)
+        title_font.setPixelSize(14)
+        title_font.setWeight(QFont.Weight.Bold)
+        title_label.setFont(title_font)
+        title_label.setStyleSheet("color: #262626;")
+        title_label.setFixedHeight(25)
+        group_layout.addWidget(title_label)
+        
+        # 输入框和浏览按钮
+        input_layout = QHBoxLayout()
+        
+        line_edit = QLineEdit(default_value)
+        line_edit.setFixedHeight(32)
+        line_edit_font = QFont(font_family_name)
+        line_edit_font.setPixelSize(13)
+        line_edit.setFont(line_edit_font)
+        line_edit.setStyleSheet("""
+QLineEdit {
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    padding: 6px 12px;
+    background-color: #ffffff;
+}
+QLineEdit:focus {
+    border-color: #1890ff;
+    outline: none;
+}
+""")
+        
+        # 连接文本变化信号来更新配置
+        if "根目录" in title:
+            line_edit.textChanged.connect(lambda text: setattr(self, 'root_dir', text))
+        elif "工作目录" in title:
+            line_edit.textChanged.connect(lambda text: setattr(self, 'work_dir', text))
+        
+        browse_button = QPushButton("浏览")
+        browse_button.setFixedSize(70, 32)
+        browse_button.setFont(line_edit_font)
+        browse_button.setStyleSheet("""
+QPushButton {
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    background-color: #ffffff;
+    color: #262626;
+}
+QPushButton:hover {
+    border-color: #40a9ff;
+    color: #1890ff;
+}
+QPushButton:pressed {
+    border-color: #096dd9;
+    background-color: #f0f8ff;
+}
+""")
+        browse_button.clicked.connect(lambda: browse_func(line_edit))
+        
+        input_layout.addWidget(line_edit)
+        input_layout.addWidget(browse_button)
+        
+        group_layout.addLayout(input_layout)
+        
+        return group_widget
+        
+    def create_model_group(self):
+        """创建模型选择组件"""
+        group_widget = QWidget()
+        group_layout = QVBoxLayout(group_widget)
+        group_layout.setContentsMargins(0, 0, 0, 0)
+        group_layout.setSpacing(6)
+        
+        # 标题
+        title_label = QLabel("3. 选择模型")
+        title_font = QFont(font_family_name)
+        title_font.setPixelSize(14)
+        title_font.setWeight(QFont.Weight.Bold)
+        title_label.setFont(title_font)
+        title_label.setStyleSheet("color: #262626;")
+        title_label.setFixedHeight(25)
+        group_layout.addWidget(title_label)
+        
+        # 模型选择下拉框
+        self.model_combo = QComboBox()
+        self.model_combo.setFixedHeight(32)
+        combo_font = QFont(font_family_name)
+        combo_font.setPixelSize(13)
+        self.model_combo.setFont(combo_font)
+        self.model_combo.setStyleSheet("""
+QComboBox {
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    padding: 6px 12px;
+    background-color: #ffffff;
+}
+QComboBox:focus {
+    border-color: #1890ff;
+}
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 20px;
+    border-left: 1px solid #d9d9d9;
+}
+QComboBox::down-arrow {
+    image: none;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 4px solid #8c8c8c;
+    margin-left: 6px;
+}
+QComboBox QAbstractItemView {
+    border: 1px solid #d9d9d9;
+    background-color: #ffffff;
+    selection-background-color: #e6f7ff;
+}
+""")
+        
+        # 添加可用的模型
+        all_models = []
+        for provider, models in openrouter_model_names.items():
+            for model in models:
+                all_models.append(f"{provider}: {model}")
+                
+        self.model_combo.addItems(all_models)
+        # 设置默认选中第一个anthropic模型
+        default_model = f"anthropic: {self.selected_model}"
+        index = self.model_combo.findText(default_model)
+        if index >= 0:
+            self.model_combo.setCurrentIndex(index)
+            
+        # 连接模型选择变化信号
+        self.model_combo.currentTextChanged.connect(self.on_model_changed)
+        
+        group_layout.addWidget(self.model_combo)
+        
+        return group_widget
+        
+    def browse_root_directory(self, line_edit):
+        """浏览项目根目录"""
+        directory = QFileDialog.getExistingDirectory(
+            self, 
+            "选择项目根目录",
+            line_edit.text()
+        )
+        if directory:
+            directory = directory.replace("/", "\\") if os.name == 'nt' else directory
+            line_edit.setText(directory)
+            self.root_dir = directory
+            
+    def browse_work_directory(self, line_edit):
+        """浏览工作目录"""
+        directory = QFileDialog.getExistingDirectory(
+            self, 
+            "选择工作目录",
+            line_edit.text()
+        )
+        if directory:
+            directory = directory.replace("/", "\\") if os.name == 'nt' else directory
+            line_edit.setText(directory)
+            self.work_dir = directory
+            
+    def on_model_changed(self, text):
+        """处理模型选择变化"""
+        self.selected_model = self.get_selected_model()
+        
+    def get_selected_model(self):
+        """获取选中的模型"""
+        selected_text = self.model_combo.currentText()
+        # 解析 "provider: model_name" 格式
+        if ": " in selected_text:
+            provider, model_name = selected_text.split(": ", 1)
+            return model_name
+        return self.selected_model
+        
+    def accept(self):
+        """确认配置并关闭对话框"""
+        # 验证目录是否存在
+        if not os.path.exists(self.root_dir):
+            QMessageBox.warning(self, "警告", "项目根目录不存在，请重新选择！")
+            return
+            
+        if not os.path.exists(self.work_dir):
+            QMessageBox.warning(self, "警告", "工作目录不存在，请重新选择！")
+            return
+            
+        self.selected_model = self.get_selected_model()
+        super().accept()
+
+
+class MainWindow(QMainWindow):
+    def __init__(self, root_dir, work_dir, selected_model):
         super().__init__()
 
         load_font()
 
-        self.setWindowTitle("测试")
+        self.setWindowTitle("AI程序员")
         self.setGeometry(500, 150, 600, 800)
 
         container = QWidget(self)
@@ -853,7 +1157,8 @@ class MainWindow(QMainWindow):
 
         main_layout = QVBoxLayout(container)
 
-        self.chat_widget = ChatWidget()
+        # 传递配置参数给ChatWidget
+        self.chat_widget = ChatWidget(root_dir, work_dir, selected_model)
         main_layout.addWidget(self.chat_widget)
 
     def closeEvent(self, event):
@@ -863,6 +1168,18 @@ class MainWindow(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication([])
-    window = MainWindow()
-    window.show()
-    app.exec()
+    
+    # 显示启动页
+    startup_dialog = StartupDialog()
+    if startup_dialog.exec() == QDialog.Accepted:
+        # 用户点击了"开始使用"，创建主窗口
+        window = MainWindow(
+            startup_dialog.root_dir,
+            startup_dialog.work_dir, 
+            startup_dialog.selected_model
+        )
+        window.show()
+        app.exec()
+    else:
+        # 用户取消了启动页，退出应用
+        app.quit()
