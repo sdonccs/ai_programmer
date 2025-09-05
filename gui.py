@@ -82,6 +82,16 @@ class CustomPlainTextEdit(QPlainTextEdit):
         self._original_placeholder = text
         super().setPlaceholderText(text)
     
+    def clear(self):
+        """重写clear方法，确保清空后占位符正确显示"""
+        super().clear()
+        # 重置输入法状态
+        self._has_preedit = False
+        # 确保占位符显示
+        super().setPlaceholderText(self._original_placeholder)
+        # 检查输入状态
+        self._check_input_state()
+    
     def _check_input_state(self):
         """检查输入状态并发送信号"""
         # 只有当没有预编辑文本且输入框不为空时，才认为是有效输入
