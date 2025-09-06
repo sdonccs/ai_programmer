@@ -970,7 +970,7 @@ QDialog {
         screen = QApplication.primaryScreen().geometry()
         x = (screen.width() - self.width()) // 2
         y = (screen.height() - self.height()) // 2
-        self.move(x, y)
+        self.move(x, y-80)
         
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(40, 25, 40, 25)
@@ -1249,7 +1249,13 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("AI程序员")
-        self.setGeometry(500, 150, 600, 800)
+        self.setGeometry(0, 0, 600, 800)
+
+        # 设置窗口居中
+        screen = QApplication.primaryScreen().geometry()
+        x = (screen.width() - self.width()) // 2
+        y = (screen.height() - self.height()) // 2
+        self.move(x, y-60)
 
         container = QWidget(self)
         self.setCentralWidget(container)
