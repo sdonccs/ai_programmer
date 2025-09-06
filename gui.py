@@ -738,14 +738,14 @@ QPlainTextEdit {{
 QPushButton {
     border: none;
     border-radius: 4px;
-    background-color: #07C160;
+    background-color: #00B96B;
     color: #ffffff;
 }
 QPushButton:hover {
-    background-color: #06B75B;
+    background-color: #20C77C;
 }
 QPushButton:pressed {
-    background-color: #06AE56;
+    background-color: #00945B;
 }
 QPushButton:disabled {
     background-color: #E1E1E1;
